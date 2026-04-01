@@ -1,0 +1,2243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Captain Tsubasa II — Password Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: #0f1520;
+    --border: #1a3a5c;
+    --accent: #00aaff;
+    --accent2: #ff6600;
+    --gold: #ffd700;
+    --text: #c8e0ff;
+    --dim: #4a6a8a;
+    --success: #00ff88;
+    --error: #ff4444;
+    --cell-bg: #0d1e30;
+    --cell-hover: #1a3a5c;
+    --cell-selected: #00aaff22;
+    --cell-border: #1a3a5c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Scanline effect */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* Stars background */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(0,170,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 70%, rgba(0,170,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 90%, rgba(255,255,255,0.15) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .game-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(10px, 2vw, 14px);
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(255,215,0,0.5), 0 0 40px rgba(255,215,0,0.2);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    animation: flicker 4s infinite;
+  }
+
+  .tool-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(8px, 1.5vw, 11px);
+    color: var(--accent);
+    text-shadow: 0 0 15px rgba(0,170,255,0.6);
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  @keyframes flicker {
+    0%,95%,100% { opacity: 1; }
+    96% { opacity: 0.8; }
+    97% { opacity: 1; }
+    98% { opacity: 0.7; }
+  }
+
+  /* PANEL */
+  .panel {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    margin-bottom: 20px;
+    position: relative;
+    box-shadow: 0 0 30px rgba(0,100,200,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20px; right: 20px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .panel-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  /* MODE SELECTOR */
+  .mode-selector {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    justify-content: center;
+  }
+
+  .mode-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 12px 20px;
+    background: var(--cell-bg);
+    border: 2px solid var(--dim);
+    color: var(--dim);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .mode-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .mode-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,170,255,0.1);
+    box-shadow: 0 0 15px rgba(0,170,255,0.2);
+  }
+
+  /* CHARACTER GRID DISPLAY */
+  .grid-section {
+    margin-bottom: 20px;
+  }
+
+  .grid-label {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .char-grid {
+    display: inline-grid;
+    gap: 3px;
+    background: #080d14;
+    border: 2px solid var(--border);
+    padding: 8px;
+    border-radius: 2px;
+  }
+
+  .char-cell {
+    width: 40px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cell-bg);
+    border: 1px solid var(--cell-border);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.1s;
+    user-select: none;
+    color: var(--text);
+  }
+
+  .char-cell:hover {
+    background: var(--cell-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .char-cell.selected {
+    background: rgba(0,170,255,0.25);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 8px rgba(0,170,255,0.3);
+  }
+
+  .char-cell.go-btn {
+    background: rgba(255,102,0,0.15);
+    border-color: var(--accent2);
+    color: var(--accent2);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+  }
+
+  .char-cell.empty-cell {
+    opacity: 0.2;
+    cursor: default;
+  }
+
+  /* PASSWORD DISPLAY */
+  .password-display {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+  }
+
+  .pwd-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .pwd-slot {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--dim);
+    background: #080d14;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--text);
+    transition: all 0.15s;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .pwd-slot.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(0,170,255,0.4);
+    animation: pulse-border 1s infinite;
+  }
+
+  .pwd-slot.filled {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 6px rgba(0,170,255,0.4); }
+    50% { box-shadow: 0 0 14px rgba(0,170,255,0.8); }
+  }
+
+  .pwd-gap {
+    width: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dim);
+    font-size: 20px;
+  }
+
+  /* INPUT AREA */
+  .input-area {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .pwd-text-input {
+    flex: 1;
+    min-width: 200px;
+    background: #080d14;
+    border: 2px solid var(--border);
+    color: var(--text);
+    padding: 12px 16px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    letter-spacing: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .pwd-text-input:focus {
+    border-color: var(--accent);
+  }
+
+  .pwd-text-input::placeholder {
+    color: var(--dim);
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  .convert-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #004488, #0066cc);
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .convert-btn:hover {
+    background: linear-gradient(135deg, #0066cc, #0088ff);
+    box-shadow: 0 0 20px rgba(0,170,255,0.4);
+    transform: translateY(-1px);
+  }
+
+  .clear-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 14px 14px;
+    background: transparent;
+    border: 2px solid var(--dim);
+    color: var(--dim);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .clear-btn:hover {
+    border-color: var(--error);
+    color: var(--error);
+  }
+
+  /* RESULT */
+  .result-panel {
+    background: rgba(0,255,136,0.05);
+    border: 2px solid rgba(0,255,136,0.3);
+    padding: 20px 24px;
+    margin-top: 20px;
+    display: none;
+  }
+
+  .result-panel.visible {
+    display: block;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .result-panel.error {
+    background: rgba(255,68,68,0.05);
+    border-color: rgba(255,68,68,0.3);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-label {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .result-password {
+    font-size: 28px;
+    color: var(--success);
+    letter-spacing: 8px;
+    text-shadow: 0 0 20px rgba(0,255,136,0.5);
+    margin-bottom: 12px;
+    word-break: break-all;
+    direction: rtl;
+  }
+
+  .result-password.error-text {
+    color: var(--error);
+    font-size: 14px;
+    letter-spacing: 1px;
+    direction: ltr;
+    text-shadow: none;
+  }
+
+  .result-breakdown {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .result-char {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .result-char .from {
+    font-size: 13px;
+    color: var(--dim);
+  }
+
+  .result-char .arrow {
+    font-size: 9px;
+    color: var(--dim);
+  }
+
+  .result-char .to {
+    font-size: 16px;
+    color: var(--success);
+  }
+
+  .copy-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 10px 16px;
+    background: transparent;
+    border: 1px solid var(--success);
+    color: var(--success);
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.15s;
+  }
+
+  .copy-btn:hover {
+    background: rgba(0,255,136,0.1);
+  }
+
+  /* REFERENCE TABLE */
+  .ref-table-container {
+    overflow-x: auto;
+  }
+
+  .ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .ref-table th {
+    background: rgba(0,170,255,0.1);
+    color: var(--accent);
+    padding: 8px 12px;
+    text-align: left;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    letter-spacing: 1px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .ref-table td {
+    padding: 6px 12px;
+    border-bottom: 1px solid rgba(26,58,92,0.5);
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  .ref-table tr:hover td {
+    background: rgba(0,170,255,0.05);
+  }
+
+  .ref-table td.idx {
+    color: var(--dim);
+    font-size: 11px;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding-top: 30px;
+    color: var(--dim);
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  /* GRID WRAPPER for RTL arabic */
+  .arabic-note {
+    font-size: 10px;
+    color: var(--accent2);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 700px) {
+    .two-col { grid-template-columns: 1fr; }
+    .char-cell { width: 32px; height: 30px; font-size: 11px; }
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 0;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .tab {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--dim);
+    cursor: pointer;
+    letter-spacing: 1px;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+  }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab:hover { color: var(--text); }
+
+  .mt16 { margin-top: 16px; }
+
+  .note-box {
+    background: rgba(255,102,0,0.08);
+    border-left: 3px solid var(--accent2);
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--accent2);
+    margin-bottom: 16px;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="game-title">⚽ CAPTAIN TSUBASA II: SUPER STRIKER ⚽</div>
+    <div class="tool-title">PASSWORD CONVERTER</div>
+    <div class="subtitle">EN / JP → ARABIC (v1) • TECMO FAMICOM</div>
+  </header>
+
+  <!-- TABS -->
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('convert')">CONVERTER</button>
+      <button class="tab" onclick="switchTab('grids')">CHAR MAPS</button>
+      <button class="tab" onclick="switchTab('table')">FULL TABLE</button>
+      <button class="tab" onclick="switchTab('db')">📖 DATABASE</button>
+    </div>
+
+    <!-- CONVERT TAB -->
+    <div id="tab-convert" class="tab-content active mt16">
+      <div class="panel-title">Convert Password</div>
+
+      <div class="mode-selector">
+        <button class="mode-btn active" id="btn-en" onclick="setMode('en')">🇬🇧 ENGLISH</button>
+        <button class="mode-btn" id="btn-jp" onclick="setMode('jp')">🇯🇵 JAPANESE</button>
+      </div>
+
+      <div class="note-box" id="mode-note">
+        Enter your English password (16 characters). Use the character grid below or type directly.
+      </div>
+
+      <!-- Password slots display -->
+      <div class="password-display" id="pwd-display"></div>
+
+      <!-- Text input -->
+      <div class="input-area">
+        <input
+          class="pwd-text-input"
+          id="pwd-input"
+          maxlength="18"
+          placeholder="type or click chars below..."
+          oninput="onTextInput()"
+        />
+        <button class="convert-btn" onclick="doConvert()">▶ CONVERT</button>
+        <button class="clear-btn" onclick="clearAll()">✕ CLR</button>
+      </div>
+
+      <!-- Interactive character grid for input -->
+      <div class="grid-section">
+        <div class="grid-label" id="grid-source-label">▸ English Character Grid (click to build password)</div>
+        <div id="source-grid"></div>
+      </div>
+
+      <!-- Result -->
+      <div class="result-panel" id="result-panel">
+        <div id="intermediate-block" style="display:none;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+          <div class="result-label" id="intermediate-label">▸ Japanese Password</div>
+          <div class="result-password" id="intermediate-text" style="font-size:20px;color:var(--accent)"></div>
+          <button class="copy-btn" id="intermediate-copy-btn" onclick="copyIntermediate()" style="margin-top:8px">⧉ COPY</button>
+        </div>
+        <div class="result-label">▸ Arabic Password (v1)</div>
+        <div class="result-password" id="result-text"></div>
+        <div class="result-breakdown" id="result-breakdown"></div>
+        <button class="copy-btn" onclick="copyResult()">⧉ COPY</button>
+      </div>
+    </div>
+
+    <!-- GRIDS TAB -->
+    <div id="tab-grids" class="tab-content mt16">
+      <div class="panel-title">Character Grid Maps</div>
+      <div style="display:flex;flex-direction:column;gap:24px">
+        <div>
+          <div class="grid-label">🇯🇵 Japanese Grid (5×13) — Original TECMO ROM</div>
+          <div id="ref-jp-grid"></div>
+        </div>
+        <div>
+          <div class="grid-label">🇬🇧 English Grid (5×13) —
+            <a href="https://www.romhacking.net/translations/1182/" target="_blank" style="color:var(--accent);text-decoration:none">Translation by hayabusakun</a>
+          </div>
+          <div id="ref-en-grid"></div>
+        </div>
+        <div>
+          <div class="arabic-note" style="margin-bottom:8px">↑ Arabic reads Right-to-Left — grid position index is the key</div>
+          <div class="grid-label">🇸🇦 Arabic Grid v1 (5×13) —
+            <a href="https://www.romhacking.net/translations/1176/" target="_blank" style="color:var(--accent);text-decoration:none">Translation by Mahmood S. Lattouf</a>
+          </div>
+          <div id="ref-ar-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE TAB -->
+    <div id="tab-table" class="tab-content mt16">
+      <div class="panel-title">Full Mapping Table</div>
+      <div class="ref-table-container">
+        <table class="ref-table" id="ref-table"></table>
+      </div>
+    </div>
+    <!-- DATABASE TAB -->
+    <div id="tab-db" class="tab-content mt16">
+      <div class="panel-title">Password Database</div>
+      <div style="margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input id="db-search" class="pwd-text-input" style="font-size:13px;letter-spacing:1px;max-width:260px" placeholder="search team..." oninput="renderDB()"/>
+        <select id="db-team" onchange="renderDB()" style="background:#080d14;border:2px solid #1a3a5c;color:#c8e0ff;padding:10px 12px;font-family:inherit;font-size:12px;outline:none">
+          <option value="">All Teams</option>
+        </select>
+      </div>
+
+      <!-- Main passwords table -->
+      <div class="ref-table-container">
+        <table class="ref-table" id="db-table">
+          <thead><tr>
+            <th>TEAM</th><th>LVL</th><th>JAPANESE</th><th>ARABIC</th><th></th>
+          </tr></thead>
+          <tbody id="db-body"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--dim);line-height:1.8">
+        ＊ — this symbol marks passwords with the lowest level you can play, as if you never lost a match.
+      </div>
+
+      <!-- Special / Easter Egg table -->
+      <div id="special-section" style="margin-top:32px">
+        <div class="panel-title" style="color:var(--accent2)">⭐ Special & Easter Egg Passwords</div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.8">
+          Hidden passwords with unusual team configurations, fun effects, or secret messages encoded in the password characters.
+          <br>* group A = Nitta, Kazuo, Masao, Jitō &amp; Misugi &nbsp;·&nbsp; group B = Sōda, Sano, Sawada &amp; Sorimachi &nbsp;·&nbsp; group C = Takasugi, Izawa, Taki, Kisugi &amp; Morisaki
+          <br>* In all Iran passwords: Tsubasa already has Cyclone and Misugi's Guts are 0.
+        </div>
+        <div class="ref-table-container">
+          <table class="ref-table" id="special-table">
+            <thead><tr>
+              <th>OPPONENT</th><th>JAPANESE</th><th>ARABIC</th><th>MEANING</th><th>EFFECT</th><th></th>
+            </tr></thead>
+            <tbody id="special-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    Captain Tsubasa II: Super Striker • TECMO 1990<br>
+    <span style="margin-top:6px;display:inline-block">
+      🇬🇧 English translation by <a href="https://www.romhacking.net/translations/1182/" target="_blank" style="color:var(--accent);text-decoration:none">hayabusakun</a> &nbsp;·&nbsp;
+      🇸🇦 Arabic translation by <a href="https://www.romhacking.net/translations/1176/" target="_blank" style="color:var(--accent);text-decoration:none">Mahmood S. Lattouf</a>
+    </span><br>
+    <span style="margin-top:4px;display:inline-block">
+      Password list from <a href="https://gamefaqs.gamespot.com/nes/562939-captain-tsubasa-ii-super-striker/cheats" target="_blank" style="color:var(--dim);text-decoration:none">GameFAQs</a> &nbsp;·&nbsp;
+      Password algorithm from <a href="https://cah4e3.shedevr.org.ru/cheatsbase_passg.php#249" target="_blank" style="color:var(--dim);text-decoration:none">cah4e3.shedevr.org.ru</a>
+    </span>
+  </footer>
+</div>
+
+<script>
+// ============================================================
+// CHARACTER MAPS — 64 password characters (indices 0-63) + GO at 64
+//
+// The JP alphabet comes directly from the JS source of the password
+// generator at cah4e3.shedevr.org.ru — it is the exact string `j`
+// used to render password characters.
+//
+// The EN alphabet is read from the game grid (Image 1), row by row
+// left-to-right, which matches the same index order.
+//
+// The AR alphabet is read from the game grid (Image 3), row by row
+// RIGHT-to-LEFT (RTL display), confirmed by user.
+//
+// All three share the same index space: char at index N in EN/JP/AR
+// represents the same password value N.
+// ============================================================
+
+// ENGLISH — grid read left-to-right, row by row (from Image 1)
+// 5 rows × 13 cols = 65 slots; index 64 = GO
+const EN_CHARS = [
+  'A','F','K','P','U','Z','e','j','o','t','y','4','9',
+  'B','G','L','Q','V','a','f','k','p','u','z','5','0',
+  'C','H','M','R','W','b','g','l','q','v','1','6','+',
+  'D','I','N','S','X','c','h','m','r','w','2','7',',',
+  'E','J','O','T','Y','d','i','n','s','x','3','8','GO'
+];
+
+// JAPANESE — exact 64-char password alphabet from JS source (string `j`),
+// split into rows of 13 to match the on-screen grid layout.
+// First cell of row 0 is empty (あ is index 0 but shown as blank cursor start).
+// Grid row 0: [empty] か さ た な は ま ら が ざ ば ぱ や
+// The empty slot is just a display artifact; index 0 = あ in the alphabet.
+const JP_CHARS = [
+  'あ','か','さ','た','な','は','ま','ら','が','ざ','ば','ぱ','や',
+  'い','き','し','ち','に','ひ','み','り','ぎ','じ','び','ぴ','ゆ',
+  'う','く','す','つ','ぬ','ふ','む','る','ぐ','ず','ぶ','ぷ','よ',
+  'え','け','せ','て','ね','へ','め','れ','げ','ぜ','べ','ぺ','わ',
+  'お','こ','そ','と','の','ほ','も','ろ','ご','ぞ','ぼ','ぽ','GO'
+];
+
+// ARABIC v1 — grid read RIGHT-to-LEFT (RTL), row by row (from Image 3)
+// Each row is reversed so index 0 = rightmost on-screen cell.
+// Confirmed by user. GO button = 'تم' = index 64.
+const AR_CHARS = [
+  'د','خ','ح','ج','ث','ت','ب','أ','خً','حً','تً','تُ','لا',
+  'ط','ض','ص','ش','س','ز','ر','ذ','ضً','صً','زً','زُ','لأ',
+  'م','ل','ك','ق','ف','غ','ع','ظ','لً','كً','غً','غُ','لآ',
+  'ئ','ؤ','إ','آ','ي','و','ه','ن','ؤً','إً','وً','وُ','لإ',
+  'گ','ڤ','ژ','چ','پ','ة','ى','ء','ـاً','لاً','ةً','ةُ','GO'
+];
+
+// ============================================================
+// PASSWORD DATABASE — sourced from GameFAQs Ultimate Password Collection
+// Each entry: { team, level, jp } — arabic is computed at runtime
+// JP passwords have spaces removed for processing
+// ============================================================
+const PASSWORD_DB = [
+  // フルミネンセ (Fluminense)
+  {team:'フルミネンセ',teamEn:'Fluminense',level:'02',jp:'めらこぬべぱほぐこしぞよほみりたぴぞ'},
+  {team:'フルミネンセ',teamEn:'Fluminense',level:'03',jp:'きそぷぽひもせたじぼめらうさたつわれ'},
+  {team:'フルミネンセ',teamEn:'Fluminense',level:'04',jp:'てろえられぽねぱぺたげしそらがさうい'},
+  {team:'フルミネンセ',teamEn:'Fluminense',level:'05',jp:'きるろせひぷぽめじせたべうまらさみそ'},
+  {team:'フルミネンセ',teamEn:'Fluminense',level:'06',jp:'とてべあろれこなぽぺほがたしちけおけ'},
+  {team:'フルミネンセ',teamEn:'Fluminense',level:'07',jp:'ろらしぺぽぱみそたしびもらへめちぷし'},
+  {team:'フルミネンセ',teamEn:'Fluminense',level:'08',jp:'のずけぬごえへぐあねぜよながざさぎむ'},
+  {team:'フルミネンセ',teamEn:'Fluminense',level:'09',jp:'ちずぱもりえしぼぴねみさすじびにまそ'},
+  {team:'フルミネンセ',teamEn:'Fluminense',level:'10',jp:'ゆひえおつじねのるうげごぷはまぐさら'},
+  // コリンチャンス (Corinthians)
+  {team:'コリンチャンス',teamEn:'Corinthians',level:'01*',jp:'されきこまぴひほばそじぞきもぞたへち'},
+  {team:'コリンチャンス',teamEn:'Corinthians',level:'02',jp:'ぜばのるおきごぷのひあせごじなたぺそ'},
+  {team:'コリンチャンス',teamEn:'Corinthians',level:'03',jp:'せにあうめぎなぬべゆがぐこつぱひゆの'},
+  {team:'コリンチャンス',teamEn:'Corinthians',level:'04',jp:'りぷにべぴせぎこすめゆほむべふちぐみ'},
+  {team:'コリンチャンス',teamEn:'Corinthians',level:'05',jp:'べなぬやこがぐちほやよりぞせびよるへ'},
+  {team:'コリンチャンス',teamEn:'Corinthians',level:'06',jp:'すしじぷむみうせぶびぬめけおぐちぜじ'},
+  {team:'コリンチャンス',teamEn:'Corinthians',level:'07',jp:'かいぎのはにゆござぎつあいぺむちゆれ'},
+  {team:'コリンチャンス',teamEn:'Corinthians',level:'08',jp:'のずけぬごえへぐあねぜよながそさぺむ'},
+  {team:'コリンチャンス',teamEn:'Corinthians',level:'09',jp:'ばつはおきるざのひぷいごじちぼけるに'},
+  {team:'コリンチャンス',teamEn:'Corinthians',level:'10',jp:'かもしすはぼみむざさびぶいめくちかの'},
+  // グレミオ (Grêmio)
+  {team:'グレミオ',teamEn:'Grêmio',level:'02*',jp:'にゆござぎつあいゆるなにつぷよちばい'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'03',jp:'ぽえじぜたねうおらげぬのぱわぐちさぞ'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'04',jp:'かひぼぬはじさぐざうまよいぬいひほた'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'05',jp:'ぴねはわすげざとむわいろぶちぽけさに'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'06',jp:'ぽぺほがたそぞやらもかちぱびまけぱい'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'07',jp:'さきじほまひうぞばじぬかきわぐちもぞ'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'08',jp:'もぷてむぼせれぶさめぺけまぼほぐざろ'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'09',jp:'いむがとにぶやろぎけちぽゆみさけべぞ'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'10',jp:'がかじずやはうえちざぬねりおずねぷじ'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'11',jp:'りくべれぴふこぺすずほそむきぞけべた'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'12',jp:'ぞくれにかふぺぎはずそゆざきぞにまた'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'13',jp:'ぽよとずたてろえられぽねぱさべぐぞれ'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'14',jp:'ぷぶぐゆせけよつめへてるべあげぐらに'},
+  {team:'グレミオ',teamEn:'Grêmio',level:'15',jp:'ほぺべがぞそこやかもほちはきぞにくた'},
+  // パルメイラス (Palmeiras)
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'03*',jp:'じねのるうげごぷぬわあせぐとれさぞば'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'04',jp:'そらわみもぱとびぼしろくさみとけてび'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'05',jp:'つぜばのるおきごぷのひあせぎほけじぱ'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'06',jp:'らもかちぱぼはりしさざぴみふたよばよ'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'07',jp:'りむけぱぴぶへしすけぜみむはせさぼぱ'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'08',jp:'ろよねるぽてげぷたれわせらぱげけばく'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'09',jp:'えもぐにねぼよぎげさてゆわめにちぼや'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'10',jp:'ほぺらりぞそぱぴかもしすはぷざぜばぱ'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'11',jp:'ひゆげへじつわぜうるとおぬやぜけかは'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'12',jp:'なぐこぴがよほすやてぞむちぎほにろぱ'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'13',jp:'させもよまめぼてばべさすきはせぐらあ'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'14',jp:'ぶずるぴけえぷすへねせむぜぽずぐれよ'},
+  {team:'パルメイラス',teamEn:'Palmeiras',level:'15',jp:'ぷぬつおせぐるのめよぷごべもぬほじぬ'},
+  // サントス (Santos)
+  {team:'サントス',teamEn:'Santos',level:'04*',jp:'よとずたてろえられぽねぱぺてゆささび'},
+  {team:'サントス',teamEn:'Santos',level:'05',jp:'ぴねはわすげざとむわいろぶとよけざぜ'},
+  {team:'サントス',teamEn:'Santos',level:'06',jp:'あわもざなとぼいがろさにやぽれけぴず'},
+  {team:'サントス',teamEn:'Santos',level:'07',jp:'へのあずぜごなえおあがねのなわよのや'},
+  {team:'サントス',teamEn:'Santos',level:'08',jp:'ろよねるぽてげぷたれわせらぺるけうく'},
+  {team:'サントス',teamEn:'Santos',level:'09',jp:'なびぽれがくたぺやふらそちべむぐのぬ'},
+  {team:'サントス',teamEn:'Santos',level:'10',jp:'にばふへぎきずぜゆひえおつぶみさびや'},
+  {team:'サントス',teamEn:'Santos',level:'11',jp:'べのきぱこごひしほあじみぞひかちほく'},
+  {team:'サントス',teamEn:'Santos',level:'12',jp:'らぷのくぱせごふしめあずみぽれにもず'},
+  {team:'サントス',teamEn:'Santos',level:'13',jp:'てにぐきれぎよひぺゆてじそりたねのや'},
+  {team:'サントス',teamEn:'Santos',level:'14',jp:'りみにがぴびぎやすくゆちむじはねよよ'},
+  {team:'サントス',teamEn:'Santos',level:'15',jp:'ぞそこやかもほちはぼぞりざほけにわゆ'},
+  {team:'サントス',teamEn:'Santos',level:'16',jp:'くげねせふわげめずとわべえぺるにくく'},
+  {team:'サントス',teamEn:'Santos',level:'17',jp:'つまゆわるばつとぷきるろせぶみぐえや'},
+  {team:'サントス',teamEn:'Santos',level:'18',jp:'せつねふめるげずべぷわえころてみぞぼ'},
+  {team:'サントス',teamEn:'Santos',level:'19',jp:'ひつるにじるぷぎうぷせゆぬろてみやぼ'},
+  {team:'サントス',teamEn:'Santos',level:'20',jp:'まままぞばばばかきききはひぶみざとや'},
+  // フラメンゴ (Flamengo)
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'04*',jp:'ざらぼきいぱさひにしまじぎがぐよいせ'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'05',jp:'ぷのひあせごじなめあうがべなゆひごや'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'06',jp:'ねぬぷおげぐせのわよめごとてぽさじび'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'07',jp:'こかざへほはいぜぞざにおかいぐよげる'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'08',jp:'そるよすもぷてむぼせれぶさめささがる'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'09',jp:'ずそぬいえもぐにねぼよぎげちぷぜれえ'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'10',jp:'ざさびぶいまくけにばふへぎすべねにぱ'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'11',jp:'まいずむばにえぶきぎねけひえごさごぜ'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'12',jp:'こみよざほびていぞくれにかめさぐはる'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'13',jp:'おくへぴのふぜすごずおむあぬわねなも'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'14',jp:'るむぬぎぷぶぐゆせけよつめずのぐふは'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'15',jp:'しがらぬみやぱぐびちしよくぱむぜごぼ'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'16',jp:'うれてけぬぺれへぐそぺぜよべまざじぬ'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'17',jp:'せひぷぽめじせたべうめらこぜはざろえ'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'18',jp:'いかしたにはみらぎざびぱゆふおほかず'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'19',jp:'さいにかまにぎはばぎゆざきねあざろぼ'},
+  {team:'フラメンゴ',teamEn:'Flamengo',level:'20',jp:'まままぞばばばかきききはひぶほざふや'},
+  // くにみがくいん (Kunimi Institute)
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'01',jp:'ぽあかさたなはまらがざばぱわまたうは'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'02',jp:'れがそふぺやもずそちぼえもろきたこぼ'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'03',jp:'じぼめらうさべぱぬまこしぐべなさぞぬ'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'04*',jp:'つくひぐるふじよぷずうてせすおちかば'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'05',jp:'てぞびはれかくざぺはふいそざすよけゆ'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'06',jp:'ぺぷへろそせぜぽもめおたぼべなさほぬ'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'07',jp:'ぎるせやゆぷめちつせべりるめあさぴる'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'08',jp:'ぷちぎぱせりゆしめぴつみべすげねまぱ'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'09',jp:'こがぜふほやおずぞちのえかぐこさぞく'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'10',jp:'ぜせぼぱおめさしのべまみごたじよえは'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'11',jp:'ぐせぽごよめたあてべらなれたじよべは'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'12',jp:'まぶとうばけろぬきへぽぐひぼこにぱも'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'13',jp:'げじえみわうねびとぬげくろゆへねびゆ'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'14',jp:'きいぱさひにしまじぎみばうちずすあえ'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'15',jp:'まぽぼぎばたさゆきらまつひさぎぜいく'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'16',jp:'おがなさのやがまごちやばあぱぬすあぼ'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'17',jp:'れびてなぺくれがそふぺやもこがにべひ'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'18',jp:'したにはみらぎざびぱゆいくるおほこぬ'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'19',jp:'ふてれぬずれぺぐえぺそよねがくすいす'},
+  {team:'くにみがくいん',teamEn:'Kunimi Institute',level:'20',jp:'ねねねぐげげげよわわわてとざすすぱゆ'},
+  // あきたしょうこう (Akita)
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'05*',jp:'ぱぬのよしぐごてみよあれおてえさらび'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'06',jp:'げぐせのわよめごとてべあろれねさるも'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'07',jp:'じぐていうよれにぬてぺぎぐれねさねも'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'08',jp:'ぱそろべしもぽこみぼたほびさぽよれく'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'09',jp:'たじぼめらうさべぱぬまこしぜめぐしえ'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'10',jp:'ぴによわすぎてとむゆれろぶねけぐてぼ'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'11',jp:'かがぬくはやぐふざちよずいぐふさずく'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'12',jp:'もぴねきぼすげひさむわじまぺげけなく'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'13',jp:'じぞきもうかひぼぬはじさぐあぞにぺえ'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'14',jp:'ひにしまじぎみばうゆびきぬりにねろや'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'15',jp:'ほぺべがぞそこやかもほちはこぺにぜひ'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'16',jp:'よもそおてぼものれさぼごぺぞもみばる'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'17',jp:'きとばぶひろきけじぽひへうぎひほりひ'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'18',jp:'ろげぞべぽわかこたとはほらいばすゆる'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'19',jp:'ずれぺぐえぺそよねそもてげやざすずぱ'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'20',jp:'こここへほほほぜぞぞぞおかみちほれは'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'21',jp:'かごげそはあわもざなとぼいもとみねび'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'22',jp:'ひぶひへじけじぜうへうおぬぐふざそく'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'23',jp:'ひぐまぽじよばたうてきらぬむつげぼえ'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'24',jp:'せぬぼぱめぐさしべよまみこすゆげひぱ'},
+  {team:'あきたしょうこう',teamEn:'Akita Shōkō',level:'25',jp:'ぶべぞはけこかざへほはいぜがはゆじす'},
+  // たつなみ (Tatsunami)
+  {team:'たつなみ',teamEn:'Tatsunami',level:'05*',jp:'ぼさぺとさまそろまばもぽばぎやちぬる'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'06',jp:'すしじぷむみうせぶびぬめけいばちもぼ'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'07',jp:'いゆるなにつぷがぎるせやゆびりさのひ'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'08',jp:'みぼたほびさらぞくまぱかふごほよべび'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'09',jp:'がくたぺやふらそちずぱもりえぶけぱひ'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'10',jp:'なぞひふがかじずやはうえちざまねさぜ'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'11',jp:'ねぺがはげそやざわもちいとぼろぜへぱ'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'12',jp:'じおらてうのぱれぬごしぺぐあぞぜぴも'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'13',jp:'おくへぴのふぜすごずおむあちいねぶも'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'14',jp:'よぷずうてせえぬれめねぐぺうびぐよす'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'15',jp:'えむふそねぶずもげけえぼわぎひぐらは'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'16',jp:'けごのそへあごもぜなあぼおべれみぞず'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'17',jp:'つまゆわるばつとぷきるろせじみぐわや'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'18',jp:'れぐぜぶぺよおけそてのへもぺげみぴえ'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'19',jp:'ざりぴがいぴすやにすむちぎぶるみまく'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'20',jp:'やややたちちちらりりりぱぴすゆざびび'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'21',jp:'はあわもざなとぼいがろさにぜめれざも'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'22',jp:'おまおきのばのひごきごじあそわすもや'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'23',jp:'ほざめよぞいべてかにこれはほそゆまぜ'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'24',jp:'よくろがてふぽやれずたちぺぱがげぞゆ'},
+  {team:'たつなみ',teamEn:'Tatsunami',level:'25',jp:'ぺぽぱみそたしびもらみくぼがはげみよ'},
+  // むさし (Musashi)
+  {team:'むさし',teamEn:'Musashi',level:'06*',jp:'るりくてぷぴふれせすずぺめひこねりえ'},
+  {team:'むさし',teamEn:'Musashi',level:'07',jp:'まひうぞばじぬかきうぐはひちわねつも'},
+  {team:'むさし',teamEn:'Musashi',level:'08',jp:'りぽなもぴたがぼすらやさむぞむよぺぼ'},
+  {team:'むさし',teamEn:'Musashi',level:'09',jp:'ぷのむしせごぶみめあけびべなえちゆく'},
+  {team:'むさし',teamEn:'Musashi',level:'10',jp:'けるそたへぷもらぜせぼぱおめちにふぼ'},
+  {team:'むさし',teamEn:'Musashi',level:'11',jp:'らきぶるぱひけぷしじへせみうぞぐてす'},
+  {team:'むさし',teamEn:'Musashi',level:'12',jp:'うのぱれぬごしぺぐあみそよなえねぐく'},
+  {team:'むさし',teamEn:'Musashi',level:'13',jp:'じぞきもうかひぼぬはじさぐぺぎにごえ'},
+  {team:'むさし',teamEn:'Musashi',level:'14',jp:'けえぷすへねせむぜげめぶおすぽぐずび'},
+  {team:'むさし',teamEn:'Musashi',level:'15',jp:'じしきぷうみひせぬびじめぐなえねひく'},
+  {team:'むさし',teamEn:'Musashi',level:'16',jp:'ひよぐむじてよぶうれてけぬくぼぐぺゆ'},
+  {team:'むさし',teamEn:'Musashi',level:'17',jp:'そふぺやもずそちぼえもりさげひみそる'},
+  {team:'むさし',teamEn:'Musashi',level:'18',jp:'したにはみらぎざびぱゆいくみそほぺぬ'},
+  {team:'むさし',teamEn:'Musashi',level:'19',jp:'ぱじうばしうぬきみゆぐひびよざみせや'},
+  {team:'むさし',teamEn:'Musashi',level:'20',jp:'べべべけこここへほほほぜぞかぶゆぐず'},
+  {team:'むさし',teamEn:'Musashi',level:'21',jp:'えぐぎすねよゆむげてつぶわひこげれえ'},
+  {team:'むさし',teamEn:'Musashi',level:'22',jp:'はびはふざくざずいふいえにらてほねひ'},
+  {team:'むさし',teamEn:'Musashi',level:'23',jp:'そまてずもばれえぼきぺねさそゆすげや'},
+  {team:'むさし',teamEn:'Musashi',level:'24',jp:'わけがぎとへやゆろぜちつぽぴろてりよ'},
+  {team:'むさし',teamEn:'Musashi',level:'25',jp:'うえわろぬねとぽぐげろたよぜみれぬも'},
+  {team:'むさし',teamEn:'Musashi',level:'26',jp:'もれこいぼぺほにさそぞぎまとうゆじひ'},
+  {team:'むさし',teamEn:'Musashi',level:'27',jp:'ほごほやぞあぞちかなかりははけげろは'},
+  {team:'むさし',teamEn:'Musashi',level:'28',jp:'ぐそげせよもわめてぼとべれぽぐびふる'},
+  {team:'むさし',teamEn:'Musashi',level:'29',jp:'にげうふぎわぬずゆとぐえつびもてぬひ'},
+  {team:'むさし',teamEn:'Musashi',level:'30',jp:'ろまへれぽばぜぺたきおそられにぞじぱ'},
+  // ふらの (Furano)
+  {team:'ふらの',teamEn:'Furano',level:'06*',jp:'こぎぐなほゆよがぞつてやかみらけのま'},
+  {team:'ふらの',teamEn:'Furano',level:'07',jp:'つせべりるめこぴぷべほすせえがけぞひ'},
+  {team:'ふらの',teamEn:'Furano',level:'08',jp:'はぜこねざおほげいのぞわにれしけぶぱ'},
+  {team:'ふらの',teamEn:'Furano',level:'09',jp:'ちずぱもりえしぼぴねみさすげちにとる'},
+  {team:'ふらの',teamEn:'Furano',level:'10',jp:'あほきくなぞひふがかじずやはよちほは'},
+  {team:'ふらの',teamEn:'Furano',level:'11',jp:'べのきぱこごひしほあじみぞなぷちぎく'},
+  {team:'ふらの',teamEn:'Furano',level:'12',jp:'えはぴろねざすぽげいむたわにぺねこず'},
+  {team:'ふらの',teamEn:'Furano',level:'13',jp:'れぎよひぺゆてじそつれうもばねねびす'},
+  {team:'ふらの',teamEn:'Furano',level:'14',jp:'いやばかにちきはぎりひざゆかぐすあず'},
+  {team:'ふらの',teamEn:'Furano',level:'15',jp:'げけえぼわへねさとぜげまろつぼぐぎぼ'},
+  {team:'ふらの',teamEn:'Furano',level:'16',jp:'りけぶぐぴへけよすぜへてむつぼざざぼ'},
+  {team:'ふらの',teamEn:'Furano',level:'17',jp:'ぐぱぬのよしぐごてみよあれくござおゆ'},
+  {team:'ふらの',teamEn:'Furano',level:'18',jp:'けすてぬへむれぐぜぶぺよおへいみらび'},
+  {team:'ふらの',teamEn:'Furano',level:'19',jp:'がみびらやびくぱちくふしりずなざぎぬ'},
+  {team:'ふらの',teamEn:'Furano',level:'20',jp:'とととれろろろぺぽぽぽそたらけほやひ'},
+  {team:'ふらの',teamEn:'Furano',level:'21',jp:'がたそぞやらもかちぱぼはりわりれけぬ'},
+  {team:'ふらの',teamEn:'Furano',level:'22',jp:'びせびべくめくこふべふほずゆもざわぜ'},
+  {team:'ふらの',teamEn:'Furano',level:'23',jp:'ろぱげけほしわへたみとぜらろすゆとゆ'},
+  {team:'ふらの',teamEn:'Furano',level:'24',jp:'かそじずはもうえざぼぬねいよらみぶや'},
+  {team:'ふらの',teamEn:'Furano',level:'25',jp:'しすげぜみむへおびぶぜのくぷまれさは'},
+  {team:'ふらの',teamEn:'Furano',level:'26',jp:'ぬひゆべぐじつこようるほてくごてやゆ'},
+  {team:'ふらの',teamEn:'Furano',level:'27',jp:'ぬるぬべぐぷぐこよせよほててぱれもす'},
+  {team:'ふらの',teamEn:'Furano',level:'28',jp:'しずすじみえむうびねぶぬくへいれぶび'},
+  {team:'ふらの',teamEn:'Furano',level:'29',jp:'じおふぶうのずけぬごえへぐすぞおさび'},
+  {team:'ふらの',teamEn:'Furano',level:'30',jp:'りふはらぴずざぱすえいしむらけべざひ'},
+  // とうほう (Tōhō)
+  {team:'とうほう',teamEn:'Tōhō',level:'07*',jp:'ゆむのせつぶごめるけあべぷぎれぐおば'},
+  {team:'とうほう',teamEn:'Tōhō',level:'08',jp:'みぼたほびさらぞくまぱかふごらよなび'},
+  {team:'とうほう',teamEn:'Tōhō',level:'09',jp:'ねぼよぎげさてゆわまれつとばぎねりす'},
+  {team:'とうほう',teamEn:'Tōhō',level:'10',jp:'べてぽやこれたちほぺらりぞそかよげや'},
+  {team:'とうほう',teamEn:'Tōhō',level:'11',jp:'ぽますゆたばむつらきぶるぱひつねねえ'},
+  {team:'とうほう',teamEn:'Tōhō',level:'12',jp:'てがくぼれやふさぺちずまそりふさなく'},
+  {team:'とうほう',teamEn:'Tōhō',level:'13',jp:'ほむべつぞぶこるかけほぷはぎむぐきは'},
+  {team:'とうほう',teamEn:'Tōhō',level:'14',jp:'すくゆちむふつりぶずるぴけちくほせも'},
+  {team:'とうほう',teamEn:'Tōhō',level:'15',jp:'そげれはもわぺざぼとそいさぶげにむく'},
+  {team:'とうほう',teamEn:'Tōhō',level:'16',jp:'せぞほとめかぞろべはかぽこぺぞみろえ'},
+  {team:'とうほう',teamEn:'Tōhō',level:'17',jp:'のるおきごぷのひあせごじなべごみぜず'},
+  {team:'とうほう',teamEn:'Tōhō',level:'18',jp:'はほらろざぞぱぽいかしたにざりほれぜ'},
+  {team:'とうほう',teamEn:'Tōhō',level:'19',jp:'まにぎはばぎゆざきゆついひるへざねず'},
+  {team:'とうほう',teamEn:'Tōhō',level:'20',jp:'ぜぜぜえおおおねのののげごあぱゆつも'},
+  {team:'とうほう',teamEn:'Tōhō',level:'21',jp:'ざなとぼいがろさにやぽまぎおぽすむく'},
+  {team:'とうほう',teamEn:'Tōhō',level:'22',jp:'ぐごぐごよのよあてごてなれぶげみひく'},
+  {team:'とうほう',teamEn:'Tōhō',level:'23',jp:'ちむなぞりぶがかぴけやはすちくげぜも'},
+  {team:'とうほう',teamEn:'Tōhō',level:'24',jp:'めぐさしべよまみこてばびほひつげげえ'},
+  {team:'とうほう',teamEn:'Tōhō',level:'25',jp:'そたしびもらみくぼぱびふさやびげぼび'},
+  {team:'とうほう',teamEn:'Tōhō',level:'26',jp:'ひまいぷじばにせうきぎめぬしうげごる'},
+  {team:'とうほう',teamEn:'Tōhō',level:'27',jp:'ぐぷぐこよせよほてめてぞれれほれぺぱ'},
+  {team:'とうほう',teamEn:'Tōhō',level:'28',jp:'ぼひぱはさじしざまうみいばくよてげゆ'},
+  {team:'とうほう',teamEn:'Tōhō',level:'29',jp:'ぎわぬずゆとぐえつろよねるくよおりゆ'},
+  {team:'とうほう',teamEn:'Tōhō',level:'30',jp:'かやぺおはちそのざりもごいおぽゆげく'},
+  // ローマ (Roma)
+  {team:'ローマ',teamEn:'Roma',level:'07*',jp:'ぺほにさそぞぎまもかゆばぼほほよねお'},
+  {team:'ローマ',teamEn:'Roma',level:'08',jp:'ずきみざえひびいねじくにげずざねめび'},
+  {team:'ローマ',teamEn:'Roma',level:'09',jp:'きるざのひぷいごじせにあうなてにざぼ'},
+  {team:'ローマ',teamEn:'Roma',level:'10',jp:'うみけこぬびへほぐくぜぞよそすぐける'},
+  {team:'ローマ',teamEn:'Roma',level:'11',jp:'めおばらべのきぱこごひしほびぞぜぱも'},
+  {team:'ローマ',teamEn:'Roma',level:'12',jp:'ろゆへしぽつぜみたるおびらごぐにさは'},
+  {team:'ローマ',teamEn:'Roma',level:'13',jp:'にのざこぎごいほゆあにぞつなてにえぼ'},
+  {team:'ローマ',teamEn:'Roma',level:'14',jp:'よぷずうてせえぬれめねぐぺべびぐびす'},
+  {team:'ローマ',teamEn:'Roma',level:'15',jp:'せぐるのめよぷごべてせあこれりぐすひ'},
+  {team:'ローマ',teamEn:'Roma',level:'16',jp:'びねえぷくげねせふわげめずとつざけも'},
+  {team:'ローマ',teamEn:'Roma',level:'17',jp:'ざぺはふいそざずにもいえぎゆぽすええ'},
+  {team:'ローマ',teamEn:'Roma',level:'18',jp:'ぜぶぺよおけそてのへもれごぱべすめく'},
+  {team:'ローマ',teamEn:'Roma',level:'19',jp:'ひつるにじるぷぎうぷせゆぬなてみぱぼ'},
+  {team:'ローマ',teamEn:'Roma',level:'20',jp:'らららぼぱぱぱさししします みれりざぞひ'.replace(/\s/g,'')},
+  {team:'ローマ',teamEn:'Roma',level:'21',jp:'ぼほへわさぞぜとまかおろばあよみえぜ'},
+  {team:'ローマ',teamEn:'Roma',level:'22',jp:'ろいろぎぽにぽゆたぎたつらりもゆとぼ'},
+  {team:'ローマ',teamEn:'Roma',level:'23',jp:'ぱくぽのしふたごみずらあびぐがげのゆ'},
+  {team:'ローマ',teamEn:'Roma',level:'24',jp:'あこぎぐなほゆよがぞつてやごぐみぎは'},
+  {team:'ローマ',teamEn:'Roma',level:'25',jp:'のはにゆござぎつあいゆるなぷぱげわぱ'},
+  {team:'ローマ',teamEn:'Roma',level:'26',jp:'ずびぬそえくぐもねふよぼげとつてべも'},
+  {team:'ローマ',teamEn:'Roma',level:'27',jp:'ひぎひぷじゆじせうつうめぬこくてこぱ'},
+  {team:'ローマ',teamEn:'Roma',level:'28',jp:'ばぬびにきぐくぎひよふゆじぼぶれもひ'},
+  {team:'ローマ',teamEn:'Roma',level:'29',jp:'ねざおほげいのぞわにごかとがれぞへず'},
+  {team:'ローマ',teamEn:'Roma',level:'30',jp:'もはねめぼざげべさいわこまなてぞぞぼ'},
+  // ウルグアイ (Uruguay)
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'08*',jp:'ねじくにげうふぎわぬずゆとねとさにく'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'09',jp:'せごぶみめあけびべなへくこふねちなよ'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'10',jp:'るうげごぷぬわあせぐとなめぞざけねや'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'11',jp:'ろさぴぎぽますゆたばむつらぷべねゆぱ'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'12',jp:'ぞくれにかふぺぎはずそゆざぼばにふひ'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'13',jp:'とぬげくろぐわふぽよとずたてそほばぬ'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'14',jp:'まはたもばざらぼきいぱさひにつぜかす'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'15',jp:'ぞそこやかもほちはぼぞりざさきになゆ'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'16',jp:'くげねせふわげめずとわべえろらにぼく'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'17',jp:'ぽけろぎたへぽゆらぜたつぱしくすてよ'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'18',jp:'ぴやうきすちぬひむりぐじぶわぽざじび'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'19',jp:'はちりなざりぴがいぴすやにとたざぽも'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'20',jp:'おおおねのののげごごごわあくえほじく'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'21',jp:'ぜねぬぷおげぐせのわよめごぺぼざぽゆ'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'22',jp:'ちぐちてりよりれぴてぴぺすせこげぜえ'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'23',jp:'こはせぐほざめよぞいべてかやぴすげは'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'24',jp:'たのぴぷらごすせぱあむめしぽぱれきよ'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'25',jp:'ばびずねきくえげひふねわじとたてぬも'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'26',jp:'えくぐもねふよぼげずてさわろられふく'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'27',jp:'ぼかぼにさはさぎまざまゆばるめげげす'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'28',jp:'じてずつうれえるぬぺねぷぐばじぞむぬ'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'29',jp:'べしもぽこみぼたほびさらぞきうゆなひ'},
+  {team:'ウルグアイ',teamEn:'Uruguay',level:'30',jp:'よべびゆてこくつれほふるぺぜごおぐぜ'},
+  // ハンブルガーSV (Hamburger SV)
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'08*',jp:'にめうじぎべぬうゆこぐぬつまくよなす'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'09',jp:'じせにあうめぎなぬべゆがぐやじよもは'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'10',jp:'がかじずやはうえちざぬねりぶれねらぼ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'11',jp:'ぷへさぽせぜまためおばらべしゆぜとよ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'12',jp:'がよほすやてぞむちれかぶりざみにこえ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'13',jp:'こすめゆほむべつぞぶこるかけぺほおず'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'14',jp:'たさあとらまなろぱばがぽしきぴぜすひ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'15',jp:'もわぺざぼとそいさろもにまぽざにぴよ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'16',jp:'ぽみしいたびみにらくびぎぱふせほまよ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'17',jp:'ぷきるろせひぷぽめじせたべこぽざぞぱ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'18',jp:'びぱゆいくしつにふみるぎずぺござみゆ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'19',jp:'わぼさぺとさまそろまばもぽぷげほべぱ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'20',jp:'ぎぎぎやゆゆゆちつつつりるごまみみは'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'21',jp:'すびばにむくきぎぶふひゆけぬけほぴひ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'22',jp:'あひあうなじなぬがうがぐやゆずゆやえ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'23',jp:'りぶがかぴけやはすへちざむねこざもく'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'24',jp:'るじそたぷうもらせぬぼぱめつえげあや'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'25',jp:'わあやりとなちぴろがりすぽむてげくぜ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'26',jp:'ぺよめはそてべざもれこいぼまちれこる'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'27',jp:'おとおらのろのぱごぽごしあびるびとも'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'28',jp:'がすぎしやむゆみちぶつびりごまれすは'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'29',jp:'ごうはばあぬざきなぐいひがゆずびびえ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'30',jp:'ぷぜじぴせおうすめのぬむべげほおまよ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'31',jp:'あぽくがなたふやがらずちやぼがぞとひ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'32',jp:'きぼじねひさうげじまぬわうぞらぞのや'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'33',jp:'げざすなわいむがとにぶやろぼがぞくひ'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'34',jp:'ぺぐえぺそよねそもてげもぼびるぼのも'},
+  {team:'ハンブルガーSV',teamEn:'Hamburger SV',level:'35',jp:'くなつまふがるばずやぷきえほたきいえ'},
+  // ぜんにほん (Japan)
+  {team:'ぜんにほん',teamEn:'Japan',level:'09*',jp:'ほぼざいぞさいにかまにぎはぎずさちさ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'10',jp:'かもしすはぼみむざさびぶいつにちごや'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'11',jp:'くぐのこふよごほずてあぞえはほにはぱ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'12',jp:'かふぺぎはずそゆざえもついさそにろゆ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'13',jp:'せちるいめりぷにべぴせぎこすちねじは'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'14',jp:'ろものげぽぼごわたさあとらまもみつる'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'15',jp:'おめへたのべぜらごこおぱあほめざにえ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'16',jp:'ねぽろほげたぽぞわらたかとぱぽぜぬく'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'17',jp:'しのぱぷみごしせびあみめくふみほふよ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'18',jp:'ゆいくしつにふみるぎずびぷおけざろぼ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'19',jp:'そかはこもはざほぼざいぞさけすげぐず'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'20',jp:'ぺぺぺせそそそめもももべぼゆいゆばえ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'21',jp:'がたそぞやらもかちぱぼはりばぼれじぬ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'22',jp:'きむきけひぶひへじけじぜうえくげろも'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'23',jp:'ぎぷざさゆせいまつめにばるへむざかは'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'24',jp:'ごべにぬあこぎぐなほゆよがのててるず'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'25',jp:'かきうぐはひぬよざじぐていれぐてふひ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'26',jp:'いかがむにはやぶぎざちけゆるぎげぬす'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'27',jp:'はがはぴざやざすいちいむにけすべにず'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'28',jp:'ずとぜてえろおれねぽのぺげびぱびれも'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'29',jp:'わにごかとぎあはろゆなざぽちなびぐぜ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'30',jp:'けわゆくへとつふぜろるずおぺよおばゆ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'31',jp:'ざがぶにいやけぎにちへゆぎらろぞかも'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'32',jp:'ひさうげじまぬわうばぐとぬかこぞひす'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'33',jp:'うおらげぬのぱわぐごしとよせつがにえ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'34',jp:'もてげもぼれわぼさぺとさまふみべげよ'},
+  {team:'ぜんにほん',teamEn:'Japan',level:'35',jp:'ずやぷきえちせひねりめじげかこじりす'},
+  // シリア (Syria)
+  {team:'シリア',teamEn:'Syria',level:'09*',jp:'しりふずみぴずえびすえねくちねにしあ'},
+  {team:'シリア',teamEn:'Syria',level:'10',jp:'とぜはひろおざじぽのいうたのほぜけび'},
+  {team:'シリア',teamEn:'Syria',level:'11',jp:'べのきぱこごひしほあじみぞあかねまく'},
+  {team:'シリア',teamEn:'Syria',level:'12',jp:'つろきべるぽひこぷたじほせたなねぞひ'},
+  {team:'シリア',teamEn:'Syria',level:'13',jp:'ひほばそじぞきもうかひぼぬてねにほぱ'},
+  {team:'シリア',teamEn:'Syria',level:'14',jp:'じぎみばうゆびきぬつくひぐまらねべす'},
+  {team:'シリア',teamEn:'Syria',level:'15',jp:'ほぺべがぞそこやかもほちはずぶにえひ'},
+  {team:'シリア',teamEn:'Syria',level:'16',jp:'ぼひきやさじひちまうじりばたなほめひ'},
+  {team:'シリア',teamEn:'Syria',level:'17',jp:'ねりえかげぴねはわすげざとむるにほく'},
+  {team:'シリア',teamEn:'Syria',level:'18',jp:'すちぬひむりぐじぶぴようけすつざもも'},
+  {team:'シリア',teamEn:'Syria',level:'19',jp:'むねげふぶげわずけわとえへとのすぱゆ'},
+  {team:'シリア',teamEn:'Syria',level:'20',jp:'ひひひざじじじいううにぬぬふておえ'},
+  {team:'シリア',teamEn:'Syria',level:'21',jp:'のわよめごとてべあろれこなふむてみぬ'},
+  {team:'シリア',teamEn:'Syria',level:'22',jp:'つげつとるわるろぷとぷぽせくすてうる'},
+  {team:'シリア',teamEn:'Syria',level:'23',jp:'めぞるうべかぷぬこはせぐほせてれみぼ'},
+  {team:'シリア',teamEn:'Syria',level:'24',jp:'もげしすぼわみむさとびぶまくすてよる'},
+  {team:'シリア',teamEn:'Syria',level:'25',jp:'つてそぼるれもさぷぺぼませげぜぞまぬ'},
+  {team:'シリア',teamEn:'Syria',level:'26',jp:'ほめおやぞべのちかこごりはぺわゆいや'},
+  {team:'シリア',teamEn:'Syria',level:'27',jp:'ごぽごしあたあみならなびがなはげわよ'},
+  {team:'シリア',teamEn:'Syria',level:'28',jp:'ぼひぱはさじしざまうみいばびぴてぎゆ'},
+  {team:'シリア',teamEn:'Syria',level:'29',jp:'がよにじやてぎうちれゆぬりばぱべへぱ'},
+  {team:'シリア',teamEn:'Syria',level:'30',jp:'おぽぷえのたせねごらめげあずぶぞさひ'},
+  {team:'シリア',teamEn:'Syria',level:'31',jp:'やぱえりちしねぴりみげすぴげざぞぶぬ'},
+  {team:'シリア',teamEn:'Syria',level:'32',jp:'しぽびへみたくぜびらふおくずぶぞぞひ'},
+  {team:'シリア',teamEn:'Syria',level:'33',jp:'がぐこつやよほるちてぞぷりごぞぼあも'},
+  {team:'シリア',teamEn:'Syria',level:'34',jp:'さぺとさまそろまばもぽばきやいがぞも'},
+  {team:'シリア',teamEn:'Syria',level:'35',jp:'ちほひろりぞじぽぴかうたすみりおわひ'},
+  // ちゅうごく (China)
+  {team:'ちゅうごく',teamEn:'China',level:'09*',jp:'ぷぷてませせればめめぺきべきえちげめ'},
+  {team:'ちゅうごく',teamEn:'China',level:'10',jp:'わへかきとぜはひろおざじぽおくぜぐよ'},
+  {team:'ちゅうごく',teamEn:'China',level:'11',jp:'ぼはくぴさざふすまいずむばいおねげず'},
+  {team:'ちゅうごく',teamEn:'China',level:'12',jp:'るぽひこぷたじほせらうぞめられねぼゆ'},
+  {team:'ちゅうごく',teamEn:'China',level:'13',jp:'おくへぴのふぜすごずおむあやわほても'},
+  {team:'ちゅうごく',teamEn:'China',level:'14',jp:'えよぶくねてけふげれへずわびぼぐかゆ'},
+  {team:'ちゅうごく',teamEn:'China',level:'15',jp:'りいやずぴにちえすぎりねむぼぷすろえ'},
+  {team:'ちゅうごく',teamEn:'China',level:'16',jp:'ぬぺれへぐそぺぜよもそおてずばにがひ'},
+  {team:'ちゅうごく',teamEn:'China',level:'17',jp:'うたじぜぬらうおぐぱぬのよしそほなぬ'},
+  {team:'ちゅうごく',teamEn:'China',level:'18',jp:'ゆいくしつにふみるぎずびぷゆあざはぼ'},
+  {team:'ちゅうごく',teamEn:'China',level:'19',jp:'きゆついひつるにじるぷぎうぷやみろぜ'},
+  {team:'ちゅうごく',teamEn:'China',level:'20',jp:'ぞぞぞおかかかのはははござざぜげりぼ'},
+  {team:'ちゅうごく',teamEn:'China',level:'21',jp:'よるりくてぷぴふれせすずぺいおげそず'},
+  {team:'ちゅうごく',teamEn:'China',level:'22',jp:'ぎえぎげゆねゆわつげつとるみもざかひ'},
+  {team:'ちゅうごく',teamEn:'China',level:'23',jp:'ふげみやずわびちえとくりねくさてそる'},
+  {team:'ちゅうごく',teamEn:'China',level:'24',jp:'にまよわぎばてとゆきれろつぺゆゆきや'},
+  {team:'ちゅうごく',teamEn:'China',level:'25',jp:'いうよれにぬてぺぎぐれそゆふまてごぬ'},
+  {team:'ちゅうごく',teamEn:'China',level:'26',jp:'らろさうぱぽまぬしたばぐみあえげじく'},
+  {team:'ちゅうごく',teamEn:'China',level:'27',jp:'めぜめあべおべなこのこがほこすゆぽぜ'},
+  {team:'ちゅうごく',teamEn:'China',level:'28',jp:'おがかろのやはぽごちざたあいおべはず'},
+  {team:'ちゅうごく',teamEn:'China',level:'29',jp:'じおふぶうのずけぬごえへぐぴぽおせび'},
+  {team:'ちゅうごく',teamEn:'China',level:'30',jp:'ゆぶばやつけきちるへひりぷがげべはび'},
+  {team:'ちゅうごく',teamEn:'China',level:'31',jp:'びじぺふくうそずふぬもえずもるびぬぱ'},
+  {team:'ちゅうごく',teamEn:'China',level:'32',jp:'ぜむのいおぶごにのけあぎごなねべぜよ'},
+  {team:'ちゅうごく',teamEn:'China',level:'33',jp:'らるおすぱぷのむしせごぶみろぐぼてる'},
+  {team:'ちゅうごく',teamEn:'China',level:'34',jp:'べるよべこぷてこほせれほぞろぐぼしる'},
+  {team:'ちゅうごく',teamEn:'China',level:'35',jp:'はれらぜざぺぱおいそしのにがげがたび'},
+  {team:'ちゅうごく',teamEn:'China',level:'36',jp:'がねねぜやげげおちわわのりはへがしぜ'},
+  {team:'ちゅうごく',teamEn:'China',level:'37',jp:'そふぴめもずすべぼえむこさふまきげぬ'},
+  {team:'ちゅうごく',teamEn:'China',level:'38',jp:'ぶたれふけらぺずへぱそえぜたてがむひ'},
+  {team:'ちゅうごく',teamEn:'China',level:'39',jp:'さこおよまほのてばぞごれきこすぼるぜ'},
+  {team:'ちゅうごく',teamEn:'China',level:'40',jp:'ほげぎぜぞわゆおかとつのはげじらじぬ'},
+  // イラン (Iran)
+  {team:'イラン',teamEn:'Iran',level:'10*',jp:'あぽべになたこぎがらほゆやぷよねつは'},
+  {team:'イラン',teamEn:'Iran',level:'11',jp:'げそやざわもちいとぼりにろぼずぜべえ'},
+  {team:'イラン',teamEn:'Iran',level:'12',jp:'ちれかぶりぺはけぴそざへすそくぜやす'},
+  {team:'イラン',teamEn:'Iran',level:'13',jp:'くさみぽふまびたずばくらえわぴぜくひ'},
+  {team:'イラン',teamEn:'Iran',level:'14',jp:'ぜげめぶおわべけのとこへごむはにらく'},
+  {team:'イラン',teamEn:'Iran',level:'15',jp:'げけえぼわへねさとぜげまろゆぼざさぼ'},
+  {team:'イラン',teamEn:'Iran',level:'16',jp:'ぐそぺぜよもそおてぼものれえやみあゆ'},
+  {team:'イラン',teamEn:'Iran',level:'17',jp:'ぼえもりさねぼぴまげさすばわぴすおひ'},
+  {team:'イラン',teamEn:'Iran',level:'18',jp:'ようけすてぬへむれぐぜぶぺよぱみらす'},
+  {team:'イラン',teamEn:'Iran',level:'19',jp:'ぷぜおぶせおのけめのごへべごるゆめも'},
+  {team:'イラン',teamEn:'Iran',level:'20',jp:'さささほままもぞばばばかきいわげみえ'},
+  {team:'イラン',teamEn:'Iran',level:'21',jp:'ゆりらきつぴぱひるすしじぷあぷほびく'},
+  {team:'イラン',teamEn:'Iran',level:'22',jp:'やぬやよちぐちてりよりれぴばげげらぱ'},
+  {team:'イラン',teamEn:'Iran',level:'23',jp:'すへちざむぜりいぶおぴにけぴぞてうび'},
+  {team:'イラン',teamEn:'Iran',level:'24',jp:'おせざじのめいうごべにぬあぎもてぷぜ'},
+  {team:'イラン',teamEn:'Iran',level:'25',jp:'ぽやぴむたちすぶらりむけぱにそておは'},
+  {team:'イラン',teamEn:'Iran',level:'26',jp:'すちびげむりくわぶぴふとけぎもてやぜ'},
+  {team:'イラン',teamEn:'Iran',level:'27',jp:'わそわまともとばろぼろきぽろむびとる'},
+  {team:'イラン',teamEn:'Iran',level:'28',jp:'じてずつうれえるぬぺねぷぐげりぞやぬ'},
+  {team:'イラン',teamEn:'Iran',level:'29',jp:'ぴそるよすもぷてむぼせれぶうぽおけぱ'},
+  {team:'イラン',teamEn:'Iran',level:'30',jp:'こあよけほなてへぞがれぜかぶざぞあよ'},
+  {team:'イラン',teamEn:'Iran',level:'31',jp:'えよさげねてまわげればとわばげべちぱ'},
+  {team:'イラン',teamEn:'Iran',level:'32',jp:'じまぬわうばぐとぬきよろぐてしぞほぱ'},
+  {team:'イラン',teamEn:'Iran',level:'33',jp:'こしぐばほみよきぞびてひかせきぞぎぼ'},
+  {team:'イラン',teamEn:'Iran',level:'34',jp:'りなざりぴがいぴすやにすむぬたきみえ'},
+  {team:'イラン',teamEn:'Iran',level:'35',jp:'そふのるもずごぷぼえあせさほぬぼけぼ'},
+  {team:'イラン',teamEn:'Iran',level:'36',jp:'ずままぱえばばしねききみげむはぞほく'},
+  {team:'イラン',teamEn:'Iran',level:'37',jp:'ぴかもしすはぼみむざさびぶかよがとは'},
+  {team:'イラン',teamEn:'Iran',level:'38',jp:'ごくまとあふばろなずきぽがくあきわる'},
+  {team:'イラン',teamEn:'Iran',level:'39',jp:'ぎがらほゆやぱぞつちしかるがめがぎび'},
+  {team:'イラン',teamEn:'Iran',level:'40',jp:'わせしてとめみれろべびぺぽせきらまぼ'},
+  // きたちょうせん (North Korea)
+  {team:'きたちょうせん',teamEn:'North Korea',level:'11*',jp:'ざちよずいりてえにぴれねぎぴえぐじび'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'12',jp:'ぜきるなおひぷがのじせやごじぷぐそす'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'13',jp:'ばべされきこまぺひほばそじぐべにじや'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'14',jp:'なたかのがらはごやぱざあちおたぜぬよ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'15',jp:'ぱなたうしがらぬみやぱぐびこなぜぺぜ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'16',jp:'なぴりひがすぴじやむすうちざぴほそぼ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'17',jp:'めじせたべうめらこぬべぱほぐべみりや'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'18',jp:'ぼぺあおさそなのまもがごばぼいすごえ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'19',jp:'ぺぞかべそかはこもはざほぼざぴほがぼ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'20',jp:'れれれぷぺぺぺせそそそめももざゆつぱ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'21',jp:'もこけげぼほへわさぞぜとまるぜみぜは'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'22',jp:'やぬやよちぐちてりよりれぴばゆげそぱ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'23',jp:'ぶおぴにけのすぎへごむゆぜむげみねく'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'24',jp:'いさぐげにまよわぎばてとゆれぞれげえ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'25',jp:'うえわろぬねとぽぐげろたよへろれがも'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'26',jp:'べぷへなこせぜがほめおやぞてほれなぱ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'27',jp:'ならなびがぱがくやしやふちやくべにも'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'28',jp:'てぼとべれさろこぺまぽほそたひげなひ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'29',jp:'せらぺとめぱそろべしもぽこねもぞむる'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'30',jp:'ばぎろぞきゆぽかひつたはじほがびひぼ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'31',jp:'ぶずぽへけえたぜへねらおぜらじべぼゆ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'32',jp:'ほせかじぞめはうかべざぬはいすがせず'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'33',jp:'じぜたねうおらげぬのぱわぐばゆがきぱ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'34',jp:'ぼれわぼさぺとさまそろまばがびがせび'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'35',jp:'よしけにてみへぎれびぜゆぺせのじしぼ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'36',jp:'みそそろびももぽくぼぼたふちふおぽく'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'37',jp:'くなぞひふがかじずやはうえなみがじよ'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'38',jp:'ぐかへつよはぜるてざおぷれかちがれは'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'39',jp:'ざごろめいあぽべになたこぎごぱぱきも'},
+  {team:'きたちょうせん',teamEn:'North Korea',level:'40',jp:'ごぺぴわあそすとなもむろがぺかぼるや'},
+  // サウジアラビア (Saudi Arabia)
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'11*',jp:'げごがぞわあやかとなちはろへぽぜごえ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'12',jp:'ぱせごふしめあずみべなえびにぺぜうは'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'13',jp:'べぴせぎこすめゆほむべつぞせばねぶぼ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'14',jp:'えよぶくねてけふげれへずわとぴぐちゆ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'15',jp:'とぜげまろおわばぽのときたかぐにぱは'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'16',jp:'ざつゆびいるつくにぷるふぎれしほぴえ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'17',jp:'べうめらこぬべぱほぐこしぞまえみのす'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'18',jp:'りがじばぴやうきすちぬひむおぎざうよ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'19',jp:'きゆついひつゆにじるぷぎうはよみやぜ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'20',jp:'なななろがががぽやややたちぜにざけく'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'21',jp:'ごとてべあろれこなぽぺほがたぶみえひ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'22',jp:'ねぞねはげかげざわはわいとざてれうぼ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'23',jp:'つめにばるべぎきぷこゆひせほうてみぼ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'24',jp:'ずぴのはえすござねむあいげぶはげぞよ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'25',jp:'めもまきべぼばひこさきじほふあびあぬ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'26',jp:'ぷゆむのせつぶごめるけあべぼふおおえ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'27',jp:'ぼかぼにさはさぎまざまゆばよらげぶす'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'28',jp:'ぬぺねぷぐそげせよもわめてびのびおゆ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'29',jp:'わにごかとぎあはろゆなざぽぎそびあぜ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'30',jp:'せおうすめのぬむべごぐぶこのゆおぞび'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'31',jp:'ゆぴおるつすのぷるむごせぷすぞびこも'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'32',jp:'らとしぶぱろみけしぽびへみろすおべる'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'33',jp:'とにぶやろぎけちぽゆへりたぱへじざる'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'34',jp:'うばしうぬきみぬぐひびぐよなぷぞちよ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'35',jp:'つまふがるばずやぷきえちせあるぞえく'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'36',jp:'れににじぺぎぎうそゆゆぬもぱへじよる'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'37',jp:'ぴかもしすはぼみむざさびぶるさがぷは'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'38',jp:'ちげうぱりわぬしぴとぐみすしぜらおぬ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'39',jp:'ふひにたずじぎらえうゆぱねぺみきらや'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'40',jp:'ばあよかきなてはひがれざじむかがびく'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'41',jp:'じあらつうなぱるぬがしぷぐれしこぱえ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'42',jp:'つむゆがるぶつやぷけるちせきげらもえ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'43',jp:'はろがりざぽやぴいたちすにせばこぱぼ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'44',jp:'あむりすなぶぴむがけすぶやきげそめえ'},
+  {team:'サウジアラビア',teamEn:'Saudi Arabia',level:'45',jp:'ぽげいむたわにぶらとぎけぱおぎあへよ'},
+  // かんこく (South Korea)
+  {team:'かんこく',teamEn:'South Korea',level:'12*',jp:'ねろりけげぽぴへわたすぜとむのぐとり'},
+  {team:'かんこく',teamEn:'South Korea',level:'13',jp:'ぎごいほゆあにぞつなぎかるいりみてず'},
+  {team:'かんこく',teamEn:'South Korea',level:'14',jp:'やぱざあちしいなりみにがぴすずすしも'},
+  {team:'かんこく',teamEn:'South Korea',level:'15',jp:'うみひせぬびじめぐくうべよぶねねごよ'},
+  {team:'かんこく',teamEn:'South Korea',level:'16',jp:'べはかぽこざはたほいざらぞじつすふす'},
+  {team:'かんこく',teamEn:'South Korea',level:'17',jp:'るばつとぷきるろせひぷぽめそぞざばす'},
+  {team:'かんこく',teamEn:'South Korea',level:'18',jp:'ろげぞべぽわかこたとはほらくぐすねる'},
+  {team:'かんこく',teamEn:'South Korea',level:'19',jp:'しうぬきみぬぐひびぐよじくまいみゆす'},
+  {team:'かんこく',teamEn:'South Korea',level:'20',jp:'ぱぱぱさししさまみいみばびとぼざかゆ'},
+  {team:'かんこく',teamEn:'South Korea',level:'21',jp:'ぬゆやみぐつちびよるりくてぷへほごぜ'},
+  {team:'かんこく',teamEn:'South Korea',level:'22',jp:'ろいろぎぽにぽゆたぎたつらゆむゆにぼ'},
+  {team:'かんこく',teamEn:'South Korea',level:'23',jp:'れぼぐくぺさよふそまてずもばにれろぱ'},
+  {team:'かんこく',teamEn:'South Korea',level:'24',jp:'ろぜちつぽおりるたのぴぷらごたてずも'},
+  {team:'かんこく',teamEn:'South Korea',level:'25',jp:'あいゆるなにつぷがぎるせやぺほてばや'},
+  {team:'かんこく',teamEn:'South Korea',level:'26',jp:'なのぽびがごたくやあらふちつぶびふず'},
+  {team:'かんこく',teamEn:'South Korea',level:'27',jp:'ぽさぽひたまたじらばらうぱえればつゆ'},
+  {team:'かんこく',teamEn:'South Korea',level:'28',jp:'ざつじちいるうりにぷぬぴぎさざれかや'},
+  {team:'かんこく',teamEn:'South Korea',level:'29',jp:'おひぞさのじかまごうはばあじつびばす'},
+  {team:'かんこく',teamEn:'South Korea',level:'30',jp:'じるらざうぷぱいぬせしにぐぷへべじぜ'},
+  {team:'かんこく',teamEn:'South Korea',level:'31',jp:'ぱばよみしきてびみひれくびきぎぞごえ'},
+  {team:'かんこく',teamEn:'South Korea',level:'32',jp:'ほせかじぞめはうかべざぬはめおがふず'},
+  {team:'かんこく',teamEn:'South Korea',level:'33',jp:'ちてぞぷりれかせぴぺはめすぶねべぽよ'},
+  {team:'かんこく',teamEn:'South Korea',level:'34',jp:'のけめのごへべごあぜこあなぐせべねや'},
+  {team:'かんこく',teamEn:'South Korea',level:'35',jp:'うたすはぬらむざぐぱぶいよぞなきろず'},
+  {team:'かんこく',teamEn:'South Korea',level:'36',jp:'ぺぎぎうそゆゆぬもつつぐぼしじじねぬ'},
+  {team:'かんこく',teamEn:'South Korea',level:'37',jp:'がべてぽやこれたちほぺらりにぴぼせは'},
+  {team:'かんこく',teamEn:'South Korea',level:'38',jp:'てざおぷれいのせぺにごめそせぜががぼ'},
+  {team:'かんこく',teamEn:'South Korea',level:'39',jp:'ごげれむあわぺぶなとそけがしじらたぬ'},
+  {team:'かんこく',teamEn:'South Korea',level:'40',jp:'やさけたちまへらりばぜぱぴぐせがかや'},
+  {team:'かんこく',teamEn:'South Korea',level:'41',jp:'ろぷへさぽせぜまためおばらみうぼなひ'},
+  {team:'かんこく',teamEn:'South Korea',level:'42',jp:'ぐぷぬいよせぐにてめよぎれみうぱぐひ'},
+  {team:'かんこく',teamEn:'South Korea',level:'43',jp:'ぶうえわけぬねとへぐげろぜがしらろび'},
+  {team:'かんこく',teamEn:'South Korea',level:'44',jp:'あむりすなぶぴむがけすぶやきぎそりえ'},
+  {team:'かんこく',teamEn:'South Korea',level:'45',jp:'たわにぶらとぎけぱろゆへしのぽあぬび'},
+  // バスコダガマ (Vasco da Gama)
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'12*',jp:'らひこぽぱじほたしうぞらみじひみざふ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'13',jp:'ぽよとずたてろえられぽねぱとごぐもゆ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'14',jp:'はなさほざがまぞいやばかにぎうぜほぜ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'15',jp:'ぷぬつおせぐるのめよぷごべげおほもぬ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'16',jp:'わらたかとぱらはろしぱざぽぴつすみび'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'17',jp:'せひぷぽめじせたべうめらこぼたざぴえ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'18',jp:'にはみらぎざびぱゆいくしつべそざざは'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'19',jp:'ろまばもぽばきぼたきひさらぺとざけや'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'20',jp:'こここへほほほぜぞぞぞおかるよほすは'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'21',jp:'めけくぐべへふよこぜずてほおほざぴよ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'22',jp:'にずにねぎえぎげゆねゆわつげおげわぬ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'23',jp:'とらねぶろぱげけぽしわへたみぴゆおひ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'24',jp:'ほれきくぞぺひふかそじずはもぽてすぱ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'25',jp:'あいゆるなにつぷがぎるせやぺとてうや'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'26',jp:'したばぐみらきよびぱひてくけめげぶび'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'27',jp:'ともとばろぼろきぽさぽひたふぶびくぬ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'28',jp:'べはぼのこざさごほいまあぞてげべらぱ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'29',jp:'べしもぽこみぼたほびさらぞみぴびさひ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'30',jp:'げもむぐわぼぶよとさけてろぼたおわえ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'31',jp:'ぽぼうらたさぬぱらまぐしぱさらぞうや'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'32',jp:'ぱろみけしぽびへみたくぜびぽなきあぬ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'33',jp:'てなびぽれがくたぺやふらそぼたきうえ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'34',jp:'ぎはばぎゆざきゆついひつるぽなきへぬ'},
+  {team:'バスコダガマ',teamEn:'Vasco da Gama',level:'35',jp:'のるもずごぷぼえあへかねなくむぼかせ'},
+  // ソビエト (Soviet Union)
+  {team:'ソビエト',teamEn:'Soviet Union',level:'14*',jp:'らろえぶぱぽねけしたげへみにぬすざゆ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'15',jp:'つじぎへるうゆぜぷぬつおせきれほばゆ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'16',jp:'ありちきなぴりひがすぴじやへほしぜ'.padEnd(18,'あ')},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'17',jp:'やこがぐちほやよりぞちてぴがけほせは'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'18',jp:'くしつにふみるぎずびぷゆえぐさざかる'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'19',jp:'べごあぜこあなおほながのぞしげほなび'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'20',jp:'とととれろろろぺぽぽぽそたばてほかひ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'21',jp:'みきかがびひはやくじざちふかるゆたぱ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'22',jp:'やぬやよちぐちてりよりれぴにべげはぱ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'23',jp:'つめにばるべぎきぷこゆひせむあてそぼ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'24',jp:'ぐびとなよくろがてふぽやればてげじひ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'25',jp:'あいゆるなにつぷがぎるせやゆほてたや'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'26',jp:'のへわぱごぜとしあおろみなのぴゆはは'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'27',jp:'あたあみならなびがぱがくやしげべせび'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'28',jp:'ぺまぽほそばたぞもきらかぼひぺべはる'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'29',jp:'けまべそへばこもぜきほぼおべにぞろぱ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'30',jp:'ろまへれぽばぜぺたきおそらべにぞぼぱ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'31',jp:'こおちぞほのりかぞごぴはかふぽおゆび'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'32',jp:'のけあぎごへなゆあぜがつなみわがふも'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'33',jp:'さすげびまむわくばぶとふきぞつびなす'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'34',jp:'ぽげおぽたわのたらとごらぱちぜがにぼ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'35',jp:'てみへぎれびぜゆぺくおつそおりじゆず'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'36',jp:'のくくむごふふぶあずずけなごすぼにぜ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'37',jp:'よしがつてみやるれびちぷぺじそこせぬ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'38',jp:'たぐいぼらよにさぱてぎましせざじじや'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'39',jp:'やぽぼぜちたさおりらまのぴまよぱそぬ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'40',jp:'おてちねのれりげごぺぴわあべにらふぱ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'41',jp:'へじつわぜうるとおぬぷろのねぱじごよ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'42',jp:'しひぱもみじしぼびうみさくえらじがく'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'43',jp:'げぷぺぼわせそさとめもまろもうぱたひ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'44',jp:'わみらしとびぱみろくしびぽけがらしは'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'45',jp:'なおひぷがのじせやごうめちむああげぼ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'46',jp:'もかにてぼはぎれさざゆぺまめいらがす'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'47',jp:'めぜりもべおぴぼこのすさほすごあなぜ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'48',jp:'ひぬせやじぐめちうよべりぬばてなきひ'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'49',jp:'げしそらわみもぱとびぼしろめいそれす'},
+  {team:'ソビエト',teamEn:'Soviet Union',level:'50',jp:'つりるるるぴぷぷぷすせせせぺひそねる'},
+  // ブラジル (Brazil)
+  {team:'ブラジル',teamEn:'Brazil',level:'15*',jp:'るしぎおぷみゆのせびつごめむやほるる'},
+  {team:'ブラジル',teamEn:'Brazil',level:'16',jp:'ろしぱざぽみしいたびみにらぺかほさく'},
+  {team:'ブラジル',teamEn:'Brazil',level:'17',jp:'じぽひへうたじぜぬらうおぐぞやほこる'},
+  {team:'ブラジル',teamEn:'Brazil',level:'18',jp:'もれごぜぼぺあおさそなのまへろすぎぱ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'19',jp:'へとろねぜろぽげおぽたわのこなほえひ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'20',jp:'まままぞばばばかきききはひなみざびや'},
+  {team:'ブラジル',teamEn:'Brazil',level:'21',jp:'こぜずてほおえれぞのねぺかきつてらも'},
+  {team:'ブラジル',teamEn:'Brazil',level:'22',jp:'うへうおぬぜぬのぐおぐごよばゆてけび'},
+  {team:'ブラジル',teamEn:'Brazil',level:'23',jp:'ぐぺじしよそうみてもぬびれちふてほえ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'24',jp:'ぽおりるたのぴぷらごすせぱひるれとく'},
+  {team:'ブラジル',teamEn:'Brazil',level:'25',jp:'いうよれにぬてぺぎぐれそゆにむおぷぬ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'26',jp:'ろげそきぽわもひたとぼじらよこゆちよ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'27',jp:'ぺこぺはそほそざもぞもいぼへろびみぱ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'28',jp:'なぴにぱがすぎしやむゆみちしぬおよず'},
+  {team:'ブラジル',teamEn:'Brazil',level:'29',jp:'そりぽなもぴたがぼすらやさてほびやび'},
+  {team:'ブラジル',teamEn:'Brazil',level:'30',jp:'ちくかたりふはらぴずざぱすべあぼおぬ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'31',jp:'ちしねぴりみげすぴびわむすぷおびやひ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'32',jp:'ぬきよろぐひてぽよじれたてぶわびびや'},
+  {team:'ブラジル',teamEn:'Brazil',level:'33',jp:'ばぶとふきけろずひへぽえじぜぽぼやえ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'34',jp:'ぜむぷぜおぶせおのけめのごへろぼいぱ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'35',jp:'ぱおいそしのにもみごぎぼびあしがこえ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'36',jp:'もつつぐぼるるよさぷぷてませのぼよゆ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'37',jp:'きとぜはひろおざじぽのいうせのぼえゆ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'38',jp:'きめぴざひべすいじこむにうふれらとず'},
+  {team:'ブラジル',teamEn:'Brazil',level:'39',jp:'ぽぺべずたそこえらもほねぱぶわぼえや'},
+  {team:'ブラジル',teamEn:'Brazil',level:'40',jp:'へぐがずぜよやえおてちねのりずじちや'},
+  {team:'ブラジル',teamEn:'Brazil',level:'41',jp:'はげそやざわもちいとぼりにげぼぱえず'},
+  {team:'ブラジル',teamEn:'Brazil',level:'42',jp:'らばたぺぱきらそしひぱもみばゆあいび'},
+  {team:'ブラジル',teamEn:'Brazil',level:'43',jp:'じやゆぷうちつせぬりるめぐやくあえぱ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'44',jp:'びとねわくろげとふぽわろずとまこぴぜ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'45',jp:'らとぎけぱろゆへしぽつぜみきつせあも'},
+  {team:'ブラジル',teamEn:'Brazil',level:'46',jp:'ぬぷこきぐせほひよめぞじてごぱなぞぱ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'47',jp:'ほごむまぞあぶばかなけきはみぐらほは'},
+  {team:'ブラジル',teamEn:'Brazil',level:'48',jp:'つせおびるめのくぷべごふせあしなぎえ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'49',jp:'ぎこすめゆほむべつぞぶこうぼいなぶも'},
+  {team:'ブラジル',teamEn:'Brazil',level:'50',jp:'ゆちつつつりるるるぴぷぷぷゆけそもゆ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'64',jp:'ぶわせあけとめなへろべがぜせのずぎゆ'},
+  // Roma — additional levels
+  {team:'ローマ',teamEn:'Roma',level:'20',jp:'らららぼぱぱぱさしししまみれりざぞひ'},
+  // Syria — additional levels
+  {team:'シリア',teamEn:'Syria',level:'20',jp:'ひひひざじじじいうううにぬぬふておえ'},
+  // Iran — additional levels
+  {team:'イラン',teamEn:'Iran',level:'20',jp:'さささほまままぞばばばかききわげみえ'},
+  // South Korea — additional levels
+  {team:'かんこく',teamEn:'South Korea',level:'20',jp:'ぱぱぱさしししまみみみばびとぼざかゆ'},
+  {team:'かんこく',teamEn:'South Korea',level:'27',jp:'ぽさぽひたまたじらばらうぱえれべつゆ'},
+  // Poland — additional levels
+  {team:'ポーランド',teamEn:'Poland',level:'14',jp:'ぱばがぽしきやたみひちらびくばすばる'},
+  {team:'ポーランド',teamEn:'Poland',level:'15',jp:'はぼぞりざさかぴいまはすにしぼみぜぬ'},
+  {team:'ポーランド',teamEn:'Poland',level:'16',jp:'ちぶむぬりけぶぐぴへけよすこぶざつぜ'},
+  {team:'ポーランド',teamEn:'Poland',level:'17',jp:'せひぷぽめじせたべうめらこぼめざかえ'},
+  {team:'ポーランド',teamEn:'Poland',level:'18',jp:'ぽわかこたとはほらろざぞぱふきゆてぬ'},
+  {team:'ポーランド',teamEn:'Poland',level:'19',jp:'びぐよじくよてうふてれぬずきぞれきえ'},
+  {team:'ポーランド',teamEn:'Poland',level:'20',jp:'いいいなにににがぎぎぎやゆほけざなぼ'},
+  {team:'ポーランド',teamEn:'Poland',level:'21',jp:'さぞぜとまかおろばはのぽきざのれきぼ'},
+  {team:'ポーランド',teamEn:'Poland',level:'22',jp:'みぷみめびせびべくめくこふべむざぬは'},
+  {team:'ポーランド',teamEn:'Poland',level:'23',jp:'よそうみてもぬびれぼぐくぺさべれりや'},
+  {team:'ポーランド',teamEn:'Poland',level:'24',jp:'ぬみわあぐびとなよくろがてふきびつぬ'},
+  {team:'ポーランド',teamEn:'Poland',level:'25',jp:'ひふねわじずげとうえわろぬなわれむよ'},
+  {team:'ポーランド',teamEn:'Poland',level:'26',jp:'ひまいぷじばにせうきぎめぬねうべせる'},
+  {team:'ポーランド',teamEn:'Poland',level:'27',jp:'さはさぎまざまゆばいばつきてゆべしぱ'},
+  {team:'ポーランド',teamEn:'Poland',level:'28',jp:'へあほわぜなぞとおがかろのぷりべてぜ'},
+  {team:'ポーランド',teamEn:'Poland',level:'29',jp:'へばこもぜきほぼおひぞさのきぞぞずえ'},
+  {team:'ポーランド',teamEn:'Poland',level:'30',jp:'くよやきふてちひずれりじえてゆべぬぱ'},
+  {team:'ポーランド',teamEn:'Poland',level:'31',jp:'ぬつほよぐるぞてよぷかれてるちべには'},
+  {team:'ポーランド',teamEn:'Poland',level:'32',jp:'ちあぴめりなすべぴがむこすなわぞひよ'},
+  {team:'ポーランド',teamEn:'Poland',level:'33',jp:'むもいこぶぼにほけさぎぞへおずおぼよ'},
+  {team:'ポーランド',teamEn:'Poland',level:'34',jp:'ぎはばぎゆざきゆついひつるぽれきろぬ'},
+  {team:'ポーランド',teamEn:'Poland',level:'35',jp:'ぼえあせさねなめまげがべばるちべぺは'},
+  {team:'ポーランド',teamEn:'Poland',level:'36',jp:'べりりゆこぴぴつほすするぞきぞじぽえ'},
+  {team:'ポーランド',teamEn:'Poland',level:'37',jp:'もずすべぼえむこさねぶほまたぺじしひ'},
+  {team:'ポーランド',teamEn:'Poland',level:'38',jp:'ずさめぬえまべぐねばこよげぐにがろや'},
+  {team:'ポーランド',teamEn:'Poland',level:'39',jp:'ぺぷぶじそせけうもめへぬぼはおじずぜ'},
+  {team:'ポーランド',teamEn:'Poland',level:'40',jp:'ぴきおしすひのみむじごびぶれつこひえ'},
+  {team:'ポーランド',teamEn:'Poland',level:'41',jp:'らべのきぱこごひしほあじみふきぱずぬ'},
+  {team:'ポーランド',teamEn:'Poland',level:'42',jp:'つむゆがるぶつやぷけるちせきぞらぬえ'},
+  {team:'ポーランド',teamEn:'Poland',level:'43',jp:'つみむへるびぶぜぷくけおせかぜらぐは'},
+  {team:'ポーランド',teamEn:'Poland',level:'44',jp:'ぬぼぺもぐさそぼよまもさてへくなつも'},
+  {team:'ポーランド',teamEn:'Poland',level:'45',jp:'じまぶとうばけろぬきへぽぐぱもそりる'},
+  {team:'ポーランド',teamEn:'Poland',level:'46',jp:'ぬぷこきぐせほひよめぞじててゆなばぱ'},
+  {team:'ポーランド',teamEn:'Poland',level:'47',jp:'うつかえぬるはねぐぷざげよぐにこがや'},
+  {team:'ポーランド',teamEn:'Poland',level:'48',jp:'そさいぜもまにおぼばぎのさらそそばゆ'},
+  {team:'ポーランド',teamEn:'Poland',level:'49',jp:'ぷはへぞせざぜかめいおはべごねせぼも'},
+  {team:'ポーランド',teamEn:'Poland',level:'50',jp:'しまみみみばびびびきくくくぞへせげず'},
+  // England — additional levels
+  {team:'イングランド',teamEn:'England',level:'15',jp:'るうゆぜぷぬつおせぐるのめひやほへる'},
+  {team:'イングランド',teamEn:'England',level:'16',jp:'べはかぽこざはたほいざらぞぞとすうす'},
+  {team:'イングランド',teamEn:'England',level:'17',jp:'おつぜばのるおきごぷのひあぜてみやぼ'},
+  {team:'イングランド',teamEn:'England',level:'18',jp:'るぎずびぷゆえくせつねふめけぐみとは'},
+  {team:'イングランド',teamEn:'England',level:'19',jp:'ぐめべるよべこぷてこほせれあもすこぼ'},
+  {team:'イングランド',teamEn:'England',level:'20',jp:'あああとなななろがががぽやみいげけも'},
+  {team:'イングランド',teamEn:'England',level:'21',jp:'ゆりらきつぴぱひるすしじぷらかほえく'},
+  {team:'イングランド',teamEn:'England',level:'22',jp:'せろせためぽめらべたべぱこれけれとゆ'},
+  {team:'イングランド',teamEn:'England',level:'23',jp:'いつかもにるはぼぎぷざさゆちばげすぼ'},
+  {team:'イングランド',teamEn:'England',level:'24',jp:'てふぽやれずたちぺえらりそひやげべる'},
+  {team:'イングランド',teamEn:'England',level:'25',jp:'えおあがねのなやげごがちわあもゆほぼ'},
+  {team:'イングランド',teamEn:'England',level:'26',jp:'かこごりはほあぴざぞなすいかろびさぱ'},
+  {team:'イングランド',teamEn:'England',level:'27',jp:'ひぎひぷじゆじせうつうめぬるくおざぱ'},
+  {team:'イングランド',teamEn:'England',level:'28',jp:'ふわへよずとぜてえろおれねぽほびうび'},
+  {team:'イングランド',teamEn:'England',level:'29',jp:'ぐあねぜよなげおてがわのれねぷぞざよ'},
+  {team:'イングランド',teamEn:'England',level:'30',jp:'ふてちひずれりじえぺぴうねぎしがめえ'},
+  {team:'イングランド',teamEn:'England',level:'31',jp:'べぜやほこおちぞほのりかぞくぎおみよ'},
+  {team:'イングランド',teamEn:'England',level:'32',jp:'まそきずばもひえきぼじねひるくおべぱ'},
+  {team:'イングランド',teamEn:'England',level:'33',jp:'いえもぐにねぼよぎげさてゆがさべぱは'},
+  {team:'イングランド',teamEn:'England',level:'34',jp:'けぴつけへするへぜむぷぜおほわびちや'},
+  {team:'イングランド',teamEn:'England',level:'35',jp:'るばずやぷきえちせひねりめねぷじまよ'},
+  {team:'イングランド',teamEn:'England',level:'36',jp:'ぶららやけぱぱちへししりぜけぐじめは'},
+  {team:'イングランド',teamEn:'England',level:'37',jp:'びあほきくなぞひふがかじずらかがぷく'},
+  {team:'イングランド',teamEn:'England',level:'38',jp:'ぺにごめそぎあべもゆなこぼぴひきうは'},
+  {team:'イングランド',teamEn:'England',level:'39',jp:'ぎがらほゆやぱぞつちしかるしざこまび'},
+  {team:'イングランド',teamEn:'England',level:'40',jp:'ぽこくそたほふもらぞずぼぱごそぼぎぜ'},
+  {team:'イングランド',teamEn:'England',level:'41',jp:'そむえぞもぶねかぼけげはさこげらすえ'},
+  {team:'イングランド',teamEn:'England',level:'42',jp:'はがかぜざやはおいちざのにつびあとす'},
+  {team:'イングランド',teamEn:'England',level:'43',jp:'ひがぎるじやゆぷうちつせぬつびあみす'},
+  {team:'イングランド',teamEn:'England',level:'44',jp:'けがごなへやあがぜちなやおつびあくす'},
+  {team:'イングランド',teamEn:'England',level:'45',jp:'ろねざすぽげいむたわにぶらびにあのく'},
+  {team:'イングランド',teamEn:'England',level:'46',jp:'おろぱぶのぽしけごたみへあえるらくく'},
+  {team:'イングランド',teamEn:'England',level:'47',jp:'そほつたもぞるらぼかぷぱさぷふせへえ'},
+  {team:'イングランド',teamEn:'England',level:'48',jp:'げろませわぽばめとたきべろえるらちく'},
+  {team:'イングランド',teamEn:'England',level:'49',jp:'ぷはへぞせざぜかめいおはべずつせぱも'},
+  {team:'イングランド',teamEn:'England',level:'50',jp:'とれろろろぺぽぽぽそたたたやまなよぜ'},
+  // Soviet Union — additional levels
+  {team:'ソビエト',teamEn:'Soviet Union',level:'16',jp:'ありちきなぴりひがすぴじややへほしぜ'},
+  // France — additional levels
+  {team:'フランス',teamEn:'France',level:'16',jp:'ひよぐむじてよぶうれてけぬぬござぷゆ'},
+  {team:'フランス',teamEn:'France',level:'17',jp:'ねりえかげぴねはわすげざとえはみめく'},
+  {team:'フランス',teamEn:'France',level:'18',jp:'りがじばぴやうきすちぬひむくほざみよ'},
+  {team:'フランス',teamEn:'France',level:'19',jp:'てこほせれほぞめぺぞかべそがよほくは'},
+  {team:'フランス',teamEn:'France',level:'20',jp:'えええぬねねねぐげげげよわもぴすえひ'},
+  {team:'フランス',teamEn:'France',level:'21',jp:'びひはやくじざちふういりずはずゆよえ'},
+  {team:'フランス',teamEn:'France',level:'22',jp:'かみかくはびはふざくざずいまぶゆわぬ'},
+  {team:'フランス',teamEn:'France',level:'23',jp:'さひそげまじもわばうぼときはずゆべえ'},
+  {team:'フランス',teamEn:'France',level:'24',jp:'ぞぺひふかそじずはもうえざぷたてこえ'},
+  {team:'フランス',teamEn:'France',level:'25',jp:'けこかざへほはいぜぞざにおかふゆぎぱ'},
+  {team:'フランス',teamEn:'France',level:'26',jp:'ごぜとしあおろみなのぽびがごうゆわぜ'},
+  {team:'フランス',teamEn:'France',level:'27',jp:'がぱがくやしやふちみちずりびこてくく'},
+  {team:'フランス',teamEn:'France',level:'28',jp:'びねぶぬくげけぐふわへよずとぎゆわく'},
+  {team:'フランス',teamEn:'France',level:'29',jp:'びこむぷくほぶせふぞけめずむぼおぞぼ'},
+  {team:'フランス',teamEn:'France',level:'30',jp:'もはねめぼざげべさいわこまぜきぞすぼ'},
+  {team:'フランス',teamEn:'France',level:'31',jp:'りみげすぴびわむすくとぶむぼすびもゆ'},
+  {team:'フランス',teamEn:'France',level:'32',jp:'ぴがむこすやぶほむちけぞぶわにじざも'},
+  {team:'フランス',teamEn:'France',level:'33',jp:'ぱぷのむしせごぶみめあけびまぶぼくぬ'},
+  {team:'フランス',teamEn:'France',level:'34',jp:'れぬずれぺぐえぺそよねそもぽつぼぷび'},
+  {team:'フランス',teamEn:'France',level:'35',jp:'ぼえあせさねなめまげがべばがよがめは'},
+  {team:'フランス',teamEn:'France',level:'36',jp:'れににじぺぎぎうそゆゆぬもぺちじぱる'},
+  {team:'フランス',teamEn:'France',level:'37',jp:'ざぺねあいそげなにもわがぎほびぼけや'},
+  {team:'フランス',teamEn:'France',level:'38',jp:'るあねすぷなげむせがわぶめらぷがらく'},
+  {team:'フランス',teamEn:'France',level:'39',jp:'むみひなぶびじがけくうやへうのきよひ'},
+  {team:'フランス',teamEn:'France',level:'40',jp:'がぼぶぽやさけたちまへらりはずぱやえ'},
+  {team:'フランス',teamEn:'France',level:'41',jp:'えにぴれねぎすぺげゆむそわよなあびぬ'},
+  {team:'フランス',teamEn:'France',level:'42',jp:'ずよふきえてずひねれえじげろゆぱぷよ'},
+  {team:'フランス',teamEn:'France',level:'43',jp:'ぷくけおせふへのめずぜごべぜきらびぼ'},
+  {team:'フランス',teamEn:'France',level:'44',jp:'ほゆいぎぞつにゆかるぎつはれやらぱゆ'},
+  {team:'フランス',teamEn:'France',level:'45',jp:'ゆざえもついねぼるにげさぷこみそうえ'},
+  {team:'フランス',teamEn:'France',level:'46',jp:'ぷへごぎせぜあゆめおなつべぴそあやは'},
+  {team:'フランス',teamEn:'France',level:'47',jp:'ぬるはねぐぷざげよせいわていねなとす'},
+  {team:'フランス',teamEn:'France',level:'48',jp:'ぐれほすよぺぞむてそかぶれうのあぶひ'},
+  {team:'フランス',teamEn:'France',level:'49',jp:'いめりぷにべぴせぎこすめゆぱせなぞよ'},
+  {team:'フランス',teamEn:'France',level:'50',jp:'ごわあああとなななろがががにげなこぱ'},
+  // Mexico — additional levels
+  {team:'メキシコ',teamEn:'Mexico',level:'16',jp:'へあごもぜなあぼおがなさののあぜごは'},
+  {team:'メキシコ',teamEn:'Mexico',level:'17',jp:'ぼえもりさねぼぴまげさすばもさすしひ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'18',jp:'にはみらぎざびぱゆいくしつぴむざせは'},
+  {team:'メキシコ',teamEn:'Mexico',level:'19',jp:'むねげふぶげわずけわとえへぼますねゆ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'20',jp:'あああとなななろがががぽやみくげれも'},
+  {team:'メキシコ',teamEn:'Mexico',level:'21',jp:'ぽもめおたぼべのらさこごぱめこれりす'},
+  {team:'メキシコ',teamEn:'Mexico',level:'22',jp:'らゆらるぱつぱぷしるしせみやりげばぜ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'23',jp:'うてきらぬれひぱぐぺじしよつぷてしす'},
+  {team:'メキシコ',teamEn:'Mexico',level:'24',jp:'ぶゆほまけつぞばへるかきぜやりげひぜ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'25',jp:'せそさばめもまきべぼばひこさばびりる'},
+  {team:'メキシコ',teamEn:'Mexico',level:'26',jp:'れぐせかぺよめはそてべざもれそれげゆ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'27',jp:'おとおらのろのぱごぽごしあたぱびじも'},
+  {team:'メキシコ',teamEn:'Mexico',level:'28',jp:'ぬぺねぷぐそげせよもわめてぼまびばゆ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'29',jp:'はずきみざえひびいねじくにきじべむゆ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'30',jp:'ばぎろぞきゆぽかひつたはじあがびるぼ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'31',jp:'らまぐしぱばよみしきてびみべほぞねぱ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'32',jp:'ぐひてぽよじれたてうぺられぞはびぽす'},
+  {team:'メキシコ',teamEn:'Mexico',level:'33',jp:'つとばぺるろきそぷぽひもせぴむおはは'},
+  {team:'メキシコ',teamEn:'Mexico',level:'34',jp:'よじくよてうふてれぬずれぺとぽびぬく'},
+  {team:'メキシコ',teamEn:'Mexico',level:'35',jp:'のるもずごぷぼえあせさねなさばぼぜる'},
+  {team:'メキシコ',teamEn:'Mexico',level:'36',jp:'くぼぼたふささらずままぱえふえきそび'},
+  {team:'メキシコ',teamEn:'Mexico',level:'37',jp:'ぽけるそたへぷもらぜせぼぽけとじぼび'},
+  {team:'メキシコ',teamEn:'Mexico',level:'38',jp:'ふぼせうずさめぬえまべぐねはいぱばえ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'39',jp:'じざがもういやぼぬにちさぐちぴこきぼ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'40',jp:'ほげぎぜぞわゆおかとつのはそぼらひぬ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'41',jp:'つらきぶるぱひけぷしじへせすぶありぜ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'42',jp:'ぜわへくおとぜふのろおずごがちこては'},
+  {team:'メキシコ',teamEn:'Mexico',level:'43',jp:'すひふねむじずげぶうえわけえげらぐく'},
+  {team:'メキシコ',teamEn:'Mexico',level:'44',jp:'ぞつにゆかるぎつはぷゆるざぺもらなる'},
+  {team:'メキシコ',teamEn:'Mexico',level:'45',jp:'がのじせやごうめちあぬべりぶへせきず'},
+  {team:'メキシコ',teamEn:'Mexico',level:'46',jp:'やみずごちびえありくねなぴぽらるてび'},
+  {team:'メキシコ',teamEn:'Mexico',level:'47',jp:'ぎぴごぐゆすあよつむなてるなやるぜず'},
+  {team:'メキシコ',teamEn:'Mexico',level:'48',jp:'せこあずめほなえべぞがねこるせせそぱ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'49',jp:'たずばくらえきふぱねひずしかざるずぱ'},
+  {team:'メキシコ',teamEn:'Mexico',level:'50',jp:'ぎやゆゆゆちつつつりるるるてぺそれひ'},
+  // Italy — additional levels
+  {team:'イタリア',teamEn:'Italy',level:'16',jp:'きぐぬすひよぐむじてよぶうろりざめひ'},
+  {team:'イタリア',teamEn:'Italy',level:'17',jp:'げぴねはわすげざとむわいろやぷみのよ'},
+  {team:'イタリア',teamEn:'Italy',level:'18',jp:'ちなひまりがじばぴやうきすのにざおく'},
+  {team:'イタリア',teamEn:'Italy',level:'19',jp:'らひじまぱじうばしうぬきみまふてあえ'},
+  {team:'イタリア',teamEn:'Italy',level:'20',jp:'ねねねぐげげげよわわわてとふのゆめゆ'},
+  {team:'イタリア',teamEn:'Italy',level:'21',jp:'ぎちたばゆりらきつぴぱひるぶぞゆへも'},
+  {team:'イタリア',teamEn:'Italy',level:'22',jp:'わはわいとざとにろいろぎぽゆぺすぎは'},
+  {team:'イタリア',teamEn:'Italy',level:'23',jp:'げぽずすわたえむとらねぶろみへれぱる'},
+  {team:'イタリア',teamEn:'Italy',level:'24',jp:'へるかきぜぷはひおせざじのこきべさず'},
+  {team:'イタリア',teamEn:'Italy',level:'25',jp:'ぜぞざにおかいぎのはにゆごてたげやや'},
+  {team:'イタリア',teamEn:'Italy',level:'26',jp:'あおろみなのぽびがごたくやるもびさぼ'},
+  {team:'イタリア',teamEn:'Italy',level:'27',jp:'ぷけぷのせへせごめぜめあべぎれぞらず'},
+  {team:'イタリア',teamEn:'Italy',level:'28',jp:'おがかろのやはぽごちざたあこきべもず'},
+  {team:'イタリア',teamEn:'Italy',level:'29',jp:'わにごかとぎあはろゆなざぽつそびのぜ'},
+  {team:'イタリア',teamEn:'Italy',level:'30',jp:'ちくかたりふはらぴずざぱすえあぼさぬ'},
+  {team:'イタリア',teamEn:'Italy',level:'31',jp:'ほのりかぞごぴはかあすざはなつおこも'},
+  {team:'イタリア',teamEn:'Italy',level:'32',jp:'なおやるがのちぷやごりせちあゆおちび'},
+  {team:'イタリア',teamEn:'Italy',level:'33',jp:'よあみろてなびぽれがくたぺさくきざぱ'},
+  {team:'イタリア',teamEn:'Italy',level:'34',jp:'ぱろあぱしぽなしみたがみびぞじおぎぜ'},
+  {team:'イタリア',teamEn:'Italy',level:'35',jp:'きとちほひろりぞじぽぴかうほひおほは'},
+  {team:'イタリア',teamEn:'Italy',level:'36',jp:'もつつぐぼるるよさぷぷてまふのぼくゆ'},
+  {team:'イタリア',teamEn:'Italy',level:'37',jp:'にもわがぎぼとやゆさろちつぐろぼほぱ'},
+  {team:'イタリア',teamEn:'Italy',level:'38',jp:'つごえぴるあねすぷなげむせぶぞぱおも'},
+  {team:'イタリア',teamEn:'Italy',level:'39',jp:'まほのてばぞごれきかあぺひるもぱざぼ'},
+  {team:'イタリア',teamEn:'Italy',level:'40',jp:'にらめがぎぱべやゆしこちつげがことゆ'},
+  {team:'イタリア',teamEn:'Italy',level:'41',jp:'みぞなうびかがぬくはやぐふわやこする'},
+  {team:'イタリア',teamEn:'Italy',level:'42',jp:'かなぞへはがかぜざやはおいもみあめや'},
+  {team:'イタリア',teamEn:'Italy',level:'43',jp:'もぜぞざぼおかいさのはにまよぽるまえ'},
+  {team:'イタリア',teamEn:'Italy',level:'44',jp:'はぷゆるざせつぷいめるせにくおぱくひ'},
+  {team:'イタリア',teamEn:'Italy',level:'45',jp:'そよなびもてがくぼれやふさわやなぷる'},
+  {team:'イタリア',teamEn:'Italy',level:'46',jp:'べのがるこごやぷほあちせぞはぬせけず'},
+  {team:'イタリア',teamEn:'Italy',level:'47',jp:'りびろるぴくぽぷすふたせむぶぞるやも'},
+  {team:'イタリア',teamEn:'Italy',level:'48',jp:'こかやげほはちわぞざりとかきえそうす'},
+  {team:'イタリア',teamEn:'Italy',level:'49',jp:'るかけほぷはへぞせざぜかめあゆせへび'},
+  {team:'イタリア',teamEn:'Italy',level:'50',jp:'うにぬぬぬぎぐぐぐゆよよよちせそもび'},
+  {team:'イタリア',teamEn:'Italy',level:'51',jp:'わのりととごぴろろあすぽぽとちぎらぬ'},
+  {team:'イタリア',teamEn:'Italy',level:'52',jp:'じしぴにうみすぎぬびむゆぐきえそべす'},
+  {team:'イタリア',teamEn:'Italy',level:'53',jp:'れぼぞろぺさかぽそまはたもぎれいへず'},
+  {team:'イタリア',teamEn:'Italy',level:'54',jp:'ひらへひじぱぜじうしおうぬぬともうす'},
+  {team:'イタリア',teamEn:'Italy',level:'55',jp:'がげずしやわえみちとねびりまふとわえ'},
+  {team:'イタリア',teamEn:'Italy',level:'64',jp:'たひがふらじやずぱうちえしぼびふもす'},
+  // Holland — additional levels
+  {team:'オランダ',teamEn:'Holland',level:'16',jp:'こざはたほいざらぞにいぱかぐるすぜぱ'},
+  {team:'オランダ',teamEn:'Holland',level:'17',jp:'びあみめくなびべふがくこずおわほなも'},
+  {team:'オランダ',teamEn:'Holland',level:'18',jp:'じばぴやうきすちぬひむりぐぼぞざはす'},
+  {team:'オランダ',teamEn:'Holland',level:'19',jp:'ふてれぬずれぺぐえぺそよねぬつすぽす'},
+  {team:'オランダ',teamEn:'Holland',level:'20',jp:'れれれぷぺぺぺせそそそめもぐるゆふぱ'},
+  {team:'オランダ',teamEn:'Holland',level:'21',jp:'らさこごぱまほあしばぞなみじぎれひえ'},
+  {team:'オランダ',teamEn:'Holland',level:'22',jp:'ほぱほみぞしぞびかみかくはふぬゆにゆ'},
+  {team:'オランダ',teamEn:'Holland',level:'23',jp:'げぽずすわたえむとらねぶろみひれるる'},
+  {team:'オランダ',teamEn:'Holland',level:'24',jp:'こてばびほれきくぞぺひふかぼぞてむす'},
+  {team:'オランダ',teamEn:'Holland',level:'25',jp:'はひぬよざじぐていうよれにぽぼてるゆ'},
+  {team:'オランダ',teamEn:'Holland',level:'26',jp:'ぶぴふとけすずろへむえぽぜはなおふず'},
+  {team:'オランダ',teamEn:'Holland',level:'27',jp:'よせよほてめてぞれべれかぺじぎぞろえ'},
+  {team:'オランダ',teamEn:'Holland',level:'28',jp:'ぬぺねぷぐそげせよもわめてふぬびしゆ'},
+  {team:'オランダ',teamEn:'Holland',level:'29',jp:'ろゆなざぽつがいたるやにらぷぶびぽず'},
+  {team:'オランダ',teamEn:'Holland',level:'30',jp:'びぐがばくよやきふてちひずれめべぜす'},
+  {team:'オランダ',teamEn:'Holland',level:'31',jp:'たさぬぱらまぐしぱばよみしきいぞゆす'},
+  {team:'オランダ',teamEn:'Holland',level:'32',jp:'べるほきこぷぞひほせかじぞめへべねぜ'},
+  {team:'オランダ',teamEn:'Holland',level:'33',jp:'れがくたぺやふらそちずぱもばざぞるや'},
+  {team:'オランダ',teamEn:'Holland',level:'34',jp:'びらやびくぱちくふしりふずざがぞかは'},
+  {team:'オランダ',teamEn:'Holland',level:'35',jp:'ばわやこきとちほひろりぞじこおがぽず'},
+  {team:'オランダ',teamEn:'Holland',level:'36',jp:'えばばしねききみげひひびわやぱじしよ'},
+  {team:'オランダ',teamEn:'Holland',level:'37',jp:'にもわがぎぼとやゆさろちつぐるぼげぱ'},
+  {team:'オランダ',teamEn:'Holland',level:'38',jp:'べちろへこりぽぜほぴたおぞのときしく'},
+  {team:'オランダ',teamEn:'Holland',level:'39',jp:'けくうやへふぬちぜずぐりおたさあてる'},
+  {team:'オランダ',teamEn:'Holland',level:'40',jp:'ろべびぺぽこくそたほふもらゆぴぼかは'},
+  {team:'オランダ',teamEn:'Holland',level:'41',jp:'ばおろにきのぽぎひごたゆじてせこつや'},
+  {team:'オランダ',teamEn:'Holland',level:'42',jp:'べおめすこのべむほごこぶぞてせこふや'},
+  {team:'オランダ',teamEn:'Holland',level:'43',jp:'むじずげぶうえわけぬねとへやぱられよ'},
+  {team:'オランダ',teamEn:'Holland',level:'44',jp:'のぴやりごすちぴあむりすなきいらぼす'},
+  {team:'オランダ',teamEn:'Holland',level:'45',jp:'こぷたじほせらうぞめぱぬかぺべなせぱ'},
+  {team:'オランダ',teamEn:'Holland',level:'46',jp:'やみずごちびえありくねなぴむふるぎび'},
+  {team:'オランダ',teamEn:'Holland',level:'47',jp:'ぽさよやたまてちらばれりぱしきそせゆ'},
+  {team:'オランダ',teamEn:'Holland',level:'48',jp:'ほはちわぞざりとかいぴろはひにそはぱ'},
+  {team:'オランダ',teamEn:'Holland',level:'49',jp:'がけしむやへみぶちぜびけりえよもつぬ'},
+  {team:'オランダ',teamEn:'Holland',level:'50',jp:'つりるるるぴぷぷぷすせせせみひそがる'},
+  {team:'オランダ',teamEn:'Holland',level:'51',jp:'なざぷががいせややにめちちがらそれく'},
+  {team:'オランダ',teamEn:'Holland',level:'52',jp:'ざさぱないましがにばみやぎかあとりぼ'},
+  {team:'オランダ',teamEn:'Holland',level:'53',jp:'びえよぶくねてけふげれへずぼぞせごす'},
+  {team:'オランダ',teamEn:'Holland',level:'54',jp:'ばぽぶばきたけきひらへひじじぎいずえ'},
+  {team:'オランダ',teamEn:'Holland',level:'55',jp:'まめるいばべぷにきこせぎひなたとるも'},
+  {team:'オランダ',teamEn:'Holland',level:'64',jp:'ふれぶろずぺけぽえそへたねうゆずぜや'},
+  // Argentine — additional levels
+  {team:'アルゼンチン',teamEn:'Argentine',level:'16',jp:'すぜへてむおぜれぶのおぺけざまにぶは'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'17',jp:'ぴかりれすはぴぺむざすそぶこぺげめず'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'18',jp:'げずべぷわえこせとねほめろびりれあぬ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'19',jp:'きゆついひつるにじるぷぎういばみもぜ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'20',jp:'るるるぴぷぷぷすせせせむめぎひれみず'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'21',jp:'きざごたひいあらじになぱうつうゆさぜ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'22',jp:'はびはふざくざずいふいえにねけげあひ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'23',jp:'もばれえぼきぺねさひそげまぬくゆいす'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'24',jp:'せぬぼぱめぐさしべよまみこぺげげこぱ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'25',jp:'ぼぱびふさしくずまみふえばのこてうく'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'26',jp:'ぬひゆべぐじつこようるほてぽごてほゆ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'27',jp:'ならなびがぱがくやしやふちおべべくも'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'28',jp:'ぶのべねけごこげへあほわぜぷぐびぱず'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'29',jp:'ぷたれわせらぺとめぱそろべしやぞぞゆ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'30',jp:'らひのもぱじごぼしうあさみぬくびやす'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'31',jp:'さかつばまはるきばざぷひきいばぞよぜ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'32',jp:'びらふおくぱずのふしえごずみちじざる'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'33',jp:'へまゆかぜばつはおきるざのがはぞよく'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'34',jp:'ばもぽばきぼたきひさらひじごほおこよ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'35',jp:'うたすはぬらむざぐぱぶいよはさきびず'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'36',jp:'あずずけなええへがねねぜやぷぐぼこず'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'37',jp:'ぱおめさしのべまみごこばびすゆぼくよ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'38',jp:'かむぱごはぶしあざけみないがはじみく'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'39',jp:'なとそけがろもへやぽぼぜちふすぱめゆ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'40',jp:'こねにへほげぎぜぐずゆおかみちらじせ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'41',jp:'ぎぽますゆたばむつらきぶるこぺこぴず'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'42',jp:'ぱきらそしひぱもみじしぼびなかあぱも'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'43',jp:'のれろらごぺぽぱあそたしなぶるぱぎも'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'44',jp:'ぎこせべゆほめこつぞべほるねけこすひ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'45',jp:'きぼすげひさむわじまぶとうぱがらびひ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'46',jp:'ぼはぎれさざゆぺまいつそばひしそぷぱ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'47',jp:'ずよばぜえてきおねれひのげわぜなよる'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'48',jp:'ばじるなきうぷがひぬせやじずむるぱる'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'49',jp:'にべぴせぎこすめさしべよつぜめなぴぞ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'50',jp:'あとなななろがががぽやややそわぎぷえ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'51',jp:'へべいぜぜこにおおほぎののぜめぎめび'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'52',jp:'もわごこぼとあほさろなぞまぺげぎのぱ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'53',jp:'ぱくうぴしふぬすみずぐむびぺげぎいぱ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'54',jp:'ゆきわゆつひとつるじろるぷぷぐもえず'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'55',jp:'よいかめてにはべれぎざこぺぶるもちも'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'56',jp:'ばろすねきぽむげひたぶわじひしいわぱ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'57',jp:'たのべぜらごこおぱあほのしざまいぞは'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'58',jp:'びこりのくほぴごふぞすあずまたふのえ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'59',jp:'りはわほぴざとぞすいろかむじみむくえ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'60',jp:'ごぬほこあぐぞほなよかぞがげへぺみゆ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'61',jp:'ぶうれてけぬぺれへぐそぺぜまたふぴえ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'62',jp:'そしざびもみいくぼびにふさろのふぷひ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'63',jp:'みもたずびぼらえくさぱねふよずえとえ'},
+  {team:'アルゼンチン',teamEn:'Argentine',level:'64',jp:'りずゆぜぴえつおすねるのむしやむほゆ'},
+  // West Germany — additional levels
+  {team:'ニシドイツ',teamEn:'West Germany',level:'16',jp:'けごのそへあごもぜなあぼおぎごみぬず'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'17',jp:'はれかくざぺはふいそざずにぐざすかぱ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'18',jp:'くしつにふみるぎずびぷゆえたてざげる'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'19',jp:'りふずみぴずえびすえねくむみもれぐる'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'20',jp:'ほほほぜぞぞぞおかかかのはめりほごぜ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'21',jp:'もこけげぼほへわさぞぜとまざぜみかは'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'22',jp:'そがそちもやもりぼちぼぴさすたゆせよ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'23',jp:'がぴごこやすあほちむなぞりへみげじよ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'24',jp:'せぬぼぱめぐさしべよまみこぺゆげなぱ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'25',jp:'きくえげひふねわじずげとうがげれにく'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'26',jp:'へむえぽぜぶねたおけげらのいおれぽぜ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'27',jp:'ならなびがぱがくやしやふちおくべはも'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'28',jp:'せぞそぜめかもおべはぼのこてにべつや'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'29',jp:'くほぶせふぞけめずかへべえはへおずず'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'30',jp:'ぺぞずぷそかえせもはねめぼざぜぞせは'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'31',jp:'るむごせぷぶあめせけなべめへみべぼよ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'32',jp:'ぬきよろぐひてぽよじれたてうかびゆや'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'33',jp:'むもいこぶぼにほけさぎぞへごずおかよ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'34',jp:'めつぐめべるよべこぷてこほふまぼばゆ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'35',jp:'ぱおいそしのにもみごぎぼびそつががえ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'36',jp:'ねききみげひひびわじじくとちとじひび'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'37',jp:'へぎきずぜゆひえおつじねのぞぶきむぜ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'38',jp:'すろよびむぽてくぶたれふけずばぱてる'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'39',jp:'ぶびじがけくうやへふぬちぜぽよきがゆ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'40',jp:'ぐぴぼゆよすさつてむまるれあえあてび'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'41',jp:'ゆたばむつらきぶるぱひけぷほむきねは'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'42',jp:'わそげぬともわぐろぼとよぽへみこれよ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'43',jp:'ひがぎるじやゆぷうちつせぬぼぷあむす'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'44',jp:'れきさばぺひまきそじばひもなねあごも'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'45',jp:'ぴがよほすやてぞむちれかぶぎごそしず'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'46',jp:'かがぴべばやすこざちむほいぎごそそず'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'47',jp:'にりのぬぎぴごぐゆすあよつるがるじぼ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'48',jp:'ぬてこぴぐれほすよぺぞむてとぬなごぬ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'49',jp:'ざせちるいめりぷにべぴせぎけしなふく'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'50',jp:'ぜえおおおねのののげごごごよいもせえ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'51',jp:'たがぶららやけぱぱちへししられとしぬ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'52',jp:'びちゆひくりつじふぴるうずしそそごゆ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'53',jp:'こはなさほざがまぞいやばかすたもりよ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'54',jp:'てふなてれずがれぺえやぺそそつぎげえ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'55',jp:'ぱぺよひしそてじみもれうびざぜいぐは'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'56',jp:'つきげぼるひわさぷじとませぷやずつず'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'57',jp:'なほぺべがぞそこやかもほちばべいむや'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'58',jp:'めぱてきべしれひこみぺじほすたもぽよ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'59',jp:'くやもあふちぼなずりさがえつなずりぜ'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'60',jp:'あぐぞほなよかぞがてはかやわうぺゆる'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'61',jp:'さのやがまごちやばありちきぶぱずかも'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'62',jp:'たすじぶらむうけぱぶぬへしがげむてく'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'63',jp:'ぞぶめいかけべにはへこぎざちとむかび'},
+  {team:'ニシドイツ',teamEn:'West Germany',level:'64',jp:'ふれぶろずぺけぽえそへたねうかずゆや'},
+  // Brazil — additional levels
+  {team:'ブラジル',teamEn:'Brazil',level:'51',jp:'ろあすぽぽなむたたがぶららざぴせわゆ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'52',jp:'きらちざひぱりいじしぴにうちふとぞえ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'53',jp:'えとそおねろものげぽぼごわぴえいざす'},
+  {team:'ブラジル',teamEn:'Brazil',level:'54',jp:'ぱあぷぱしなせしみがめみびるぜいちぬ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'55',jp:'ずばぼてえきされねひまぺげねももぱぼ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'56',jp:'しあるぜみなぷおびがせのくるぜむおぬ'},
+  {team:'ブラジル',teamEn:'Brazil',level:'57',jp:'れずすくぺえむふそねぶずもぼいぺぷも'},
+  {team:'ブラジル',teamEn:'Brazil',level:'58',jp:'もぴとくぼすろふさむぽずまわさぎもは'},
+  {team:'ブラジル',teamEn:'Brazil',level:'59',jp:'ぴざとぞすいろかむにぽはぶぶわもほや'},
+  {team:'ブラジル',teamEn:'Brazil',level:'60',jp:'らせなあぱめがなしべやがみなみとべや'},
+  {team:'ブラジル',teamEn:'Brazil',level:'61',jp:'のれさぼごぺまさあそばまなぶわずあや'},
+  {team:'ブラジル',teamEn:'Brazil',level:'62',jp:'きえるげひねぷわじげせとうつへむちる'},
+  {team:'ブラジル',teamEn:'Brazil',level:'63',jp:'りろなぶぴぽがけすたやへむべあえのぬ'},
+  // Special / Easter Egg passwords
+  {team:'Special',teamEn:'Special — Argentina',level:'—',jp:'ささささささささささささささ',note:'',effect:'Tsubasa lv13, Hyūga lv56, Misaki lv35, Matsuyama lv29, Ishizaki lv51, Wakashimazu lv54, Wakabayashi lv8, group A lv56, group B lv10, group C lv48. Tsubasa already has Cyclone, Misugi\'s Guts are 0'},
+  {team:'Special',teamEn:'Special — Fluminense',level:'—',jp:'りぎじびめあうくすなぬふむるぐひえみ',note:'Everybody lv1, Babington & Amaral & Dotour lv5',effect:'Everybody lv1, Babington & Amaral & Dotour lv5'},
+  {team:'Special',teamEn:'Special — Fluminense',level:'—',jp:'がぐとぱやいきしちにひみりぎじたげら',note:'Everybody lv1, Renato lv10',effect:'Everybody lv1, Renato lv10'},
+  {team:'Special',teamEn:'Special — Fluminense',level:'—',jp:'ぬまむるぐずぶぷよえけせてねへぽのう',note:'Everybody lv1, Renato lv5',effect:'Everybody lv1, Renato lv5'},
+  {team:'Special',teamEn:'Special — Fluminense',level:'—',jp:'ぷはまらがざばぱやいきしちにひたゆみ',note:'Everybody lv1, Tsubasa lv10',effect:'Everybody lv1, Tsubasa lv10'},
+  {team:'Special',teamEn:'Special — Fluminense',level:'—',jp:'とぐずぶぷよえけせてねへめれげぽずた',note:'Everybody lv1, Tsubasa lv20',effect:'Everybody lv1, Tsubasa lv20'},
+  {team:'Special',teamEn:'Special — Fluminense',level:'—',jp:'ねはうえちざぬねりいぐげぴのほねたむ',note:'Everybody lv10, Tsubasa lv1',effect:'Everybody lv10, Tsubasa lv1'},
+  {team:'Special',teamEn:'Special — Fluminense',level:'—',jp:'へりれすはぴぺむざすそぶいほもちぱへ',note:'Everybody lv5, Tsubasa lv1',effect:'Everybody lv5, Tsubasa lv1'},
+  {team:'Special',teamEn:'Special — Fluminense',level:'—',jp:'つばさとみさきごうるおうばえしゆうと',note:'Tsubasa & Misaki overhead shot',effect:'Tsubasa lv38, Renato lv26, Platon & Babington lv22, Tahamata & Batista lv15, Dotour lv19, Marini & Lima lv39, Amaral lv6, Gil lv2'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'さなえちやのおつぱいはとてもやらかい',note:'Sanae-chan\'s breasts are very soft',effect:'Tsubasa lv15, Hyūga lv37, Misaki lv26, Matsuyama lv59, Ishizaki lv54, Wakashimazu lv50, Wakabayashi lv53, group A lv38, group B lv30, group C lv20'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'うさぎはてくものまあく',note:'The rabbit is Tecmo\'s mark',effect:'Tsubasa lv18, Hyūga lv51, Misaki lv20, Matsuyama lv57, Ishizaki lv33, Wakashimazu lv12, Wakabayashi lv34, group A lv41, group B lv58, group C lv48'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'たかはしよういちのま',note:'Yōichi Takahashi\'s house (CT manga author)',effect:'Tsubasa lv19, Hyūga lv15, Misaki lv45, Matsuyama lv56, Ishizaki lv41, Wakashimazu lv12, Wakabayashi lv18, group A lv64, group B lv59, group C lv42'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'つばさよりつよくなりたい',note:'I want to be stronger than Tsubasa',effect:'Tsubasa lv36, Hyūga lv57, Misaki lv45, Matsuyama lv42, Ishizaki lv34, Wakashimazu lv12, Wakabayashi lv52, group A lv52, group B lv2, group C lv40'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'べじいた',note:'Vegeta (Dragon Ball character)',effect:'Tsubasa lv37, Hyūga lv1, Misaki lv47, Matsuyama lv60, Ishizaki lv57, Wakashimazu lv12, Wakabayashi lv18, group A lv24, group B lv54, group C lv61'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'べべべ',note:'be~be~be (sputtering scooter sound)',effect:'Tsubasa lv37, Hyūga lv1, Misaki lv48, Matsuyama lv60, Ishizaki lv57, Wakashimazu lv12, Wakabayashi lv18, group A lv24, group B lv54, group C lv60'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'ぶらじるわ',note:'Brazil is...',effect:'Tsubasa lv40, Hyūga lv1, Misaki lv38, Matsuyama lv60, Ishizaki lv63, Wakashimazu lv12, Wakabayashi lv18, group A lv24, group B lv54, group C lv61'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'はる',note:'Spring',effect:'Tsubasa lv45, Hyūga lv1, Misaki lv48, Matsuyama lv60, Ishizaki lv57, Wakashimazu lv12, Wakabayashi lv18, group A lv24, group B lv54, group C lv52'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'もてるつばさ',note:'Popular Tsubasa',effect:'Tsubasa lv56, Hyūga lv1, Misaki lv21, Matsuyama lv60, Ishizaki lv32, Wakashimazu lv12, Wakabayashi lv18, group A lv56, group B lv54, group C lv61'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'ももみたいなおしり',note:'Butt looks like a peach',effect:'Tsubasa lv56, Hyūga lv50, Misaki lv47, Matsuyama lv60, Ishizaki lv42, Wakashimazu lv12, Wakabayashi lv18, group A lv35, group B lv23, group C lv29'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'ごり',note:'Gori (sfx for firm-muscled body)',effect:'Tsubasa lv57, Hyūga lv1, Misaki lv48, Matsuyama lv60, Ishizaki lv57, Wakashimazu lv12, Wakabayashi lv18, group A lv24, group B lv54, group C lv40'},
+  {team:'Special',teamEn:'Special — Iran',level:'—',jp:'ごごご',note:'Go~go~go (sfx: menacing atmosphere)',effect:'Tsubasa lv57, Hyūga lv1, Misaki lv64, Matsuyama lv60, Ishizaki lv57, Wakashimazu lv12, Wakabayashi lv18, group A lv24, group B lv54, group C lv24'},
+  {team:'Special',teamEn:'Special — Kunimi Institute',level:'—',jp:'はははござおわあいいぶへにずそぐるり',note:'Everybody lv20, Misaki & Nitta lv4',effect:'Everybody lv20, Misaki & Nitta lv4'},
+  {team:'Special',teamEn:'Special — Kunimi Institute',level:'—',jp:'ぽひへべたじぜぬらうおぐぱぬべちほも',note:'Everybody lv5, Morisaki lv15',effect:'Everybody lv5, Morisaki lv15'},
+  {team:'Special',teamEn:'Special — Poland',level:'—',jp:'ゆばざぎつぬまたりぐずぶわくばぜぺる',note:'Wakashimazu lv32, Hyūga & group B lv30, Misugi\'s Guts 634',effect:'Wakashimazu lv32, Hyūga & group B lv30, Misaki lv10, group C lv15, everybody else lv1, Misugi\'s Guts 634'},
+  {team:'Special',teamEn:'Special — Syria',level:'—',jp:'ろぴぞとむゆれまぶつぺますつぬぐむず',note:'Tsubasa & Wakabayashi lv1, Misugi\'s Guts 694',effect:'Tsubasa & Wakabayashi lv1, Wakashimazu lv5, group B lv15, group C lv25, everybody else lv10, Misugi\'s Guts 694'},
+  {team:'Special',teamEn:'Special — Tōhō',level:'—',jp:'おぽぜぞよふおかてずめげれえぺにぽひ',note:'Everybody lv10, Nitta & Urabe & Kishida & Nakayama lv30',effect:'Everybody lv10, Nitta & Urabe & Kishida & Nakayama lv30'},
+  {team:'Special',teamEn:'Special — Tōhō',level:'—',jp:'ぜせけぽけめへたのべぜらごぬせざらぱ',note:'Everybody lv15, Takasugi lv40',effect:'Everybody lv15, Takasugi lv40'},
+  {team:'Special',teamEn:'Special — Uruguay',level:'—',jp:'ざぐきとよよぞろべれかぽこざぎみへえ',note:'Tsubasa lv8, everybody else lv16',effect:'Tsubasa lv8, Babington lv12, Renato lv17, Lima & Dotour lv20, everybody else lv16'},
+  {team:'Special',teamEn:'Special — West Germany',level:'—',jp:'ばぽぴなきききはひひひやじぼぷてぜす',note:'Misaki & Wakabayashi lv28, group C lv50, Misugi\'s Guts 752',effect:'Misaki & Wakabayashi lv28, group C lv50, everybody else lv20, Misugi\'s Guts 752'},
+];
+
+let currentPassword = []; // array of {char, index}
+const MAX_LEN = 18;
+
+// Let's use 18 slots total: row1=9, row2=9 or row1=9 row2=9
+const PWD_LAYOUT = [[5,5],[5,3]]; // 18 chars: row1=5+5, row2=5+3
+
+function initDisplay() {
+  const display = document.getElementById('pwd-display');
+  display.innerHTML = '';
+  let slotIdx = 0;
+  PWD_LAYOUT.forEach((groups, rowIdx) => {
+    const row = document.createElement('div');
+    row.className = 'pwd-row';
+    groups.forEach((count, gIdx) => {
+      for (let i = 0; i < count; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'pwd-slot' + (slotIdx === currentPassword.length ? ' active' : '');
+        slot.id = 'slot-' + slotIdx;
+        const si = slotIdx;
+        slot.onclick = () => removeAt(si);
+        if (currentPassword[slotIdx]) {
+          slot.textContent = currentPassword[slotIdx].char;
+          slot.classList.add('filled');
+          slot.classList.remove('active');
+        }
+        row.appendChild(slot);
+        slotIdx++;
+      }
+      if (gIdx < groups.length - 1) {
+        const gap = document.createElement('div');
+        gap.className = 'pwd-gap';
+        gap.textContent = '·';
+        row.appendChild(gap);
+      }
+    });
+    display.appendChild(row);
+  });
+}
+
+function removeAt(idx) {
+  if (idx < currentPassword.length) {
+    currentPassword.splice(idx, 1);
+    syncInputFromArray();
+    initDisplay();
+  }
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('btn-en').classList.toggle('active', mode === 'en');
+  document.getElementById('btn-jp').classList.toggle('active', mode === 'jp');
+  const note = document.getElementById('mode-note');
+  const label = document.getElementById('grid-source-label');
+  if (mode === 'en') {
+    note.textContent = 'Enter your English password (up to 16 characters). Click chars below or type directly.';
+    label.textContent = '▸ English Character Grid (click to build password)';
+  } else {
+    note.textContent = 'Enter your Japanese password (up to 16 characters). Click chars below or type directly.';
+    label.textContent = '▸ Japanese Character Grid (click to build password)';
+  }
+  currentPassword = [];
+  document.getElementById('pwd-input').value = '';
+  hideResult();
+  renderSourceGrid();
+  initDisplay();
+}
+
+function getChars() {
+  return currentMode === 'en' ? EN_CHARS : JP_CHARS;
+}
+
+function renderGrid(chars, containerId, clickable, highlightIndices) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const grid = document.createElement('div');
+  grid.className = 'char-grid';
+  grid.style.gridTemplateColumns = 'repeat(13, 1fr)';
+
+  chars.forEach((ch, idx) => {
+    const cell = document.createElement('div');
+    cell.className = 'char-cell';
+    if (ch === '') {
+      cell.classList.add('empty-cell');
+      cell.textContent = '·';
+    } else if (ch === 'GO') {
+      cell.classList.add('go-btn');
+      cell.textContent = 'GO';
+    } else {
+      cell.textContent = ch;
+    }
+    if (highlightIndices && highlightIndices.includes(idx)) {
+      cell.classList.add('selected');
+    }
+    if (clickable && ch !== '' && ch !== 'GO') {
+      cell.onclick = () => addChar(ch, idx);
+    }
+    grid.appendChild(cell);
+  });
+  container.innerHTML = '';
+  container.appendChild(grid);
+}
+
+function renderSourceGrid() {
+  const chars = getChars();
+  const usedIndices = currentPassword.map(p => p.index);
+  renderGrid(chars, 'source-grid', true, usedIndices);
+}
+
+function addChar(ch, idx) {
+  if (currentPassword.length >= MAX_LEN) return;
+  currentPassword.push({ char: ch, index: idx });
+  syncInputFromArray();
+  initDisplay();
+  renderSourceGrid();
+}
+
+function syncInputFromArray() {
+  document.getElementById('pwd-input').value = currentPassword.map(p => p.char).join('');
+}
+
+function onTextInput() {
+  const val = document.getElementById('pwd-input').value;
+  const chars = getChars();
+  currentPassword = [];
+  for (const ch of val) {
+    const idx = chars.indexOf(ch);
+    if (idx !== -1) {
+      currentPassword.push({ char: ch, index: idx });
+    }
+  }
+  initDisplay();
+  renderSourceGrid();
+}
+
+function doConvert() {
+  if (currentPassword.length === 0) {
+    showError('Please enter a password first!');
+    return;
+  }
+
+  const resultPanel = document.getElementById('result-panel');
+  const resultText = document.getElementById('result-text');
+  const breakdown = document.getElementById('result-breakdown');
+  const intermediateBlock = document.getElementById('intermediate-block');
+  const intermediateLabel = document.getElementById('intermediate-label');
+  const intermediateText = document.getElementById('intermediate-text');
+
+  // Determine intermediate (the "other" language)
+  const otherChars = currentMode === 'en' ? JP_CHARS : EN_CHARS;
+  const otherLabel = currentMode === 'en' ? '▸ Japanese Password' : '▸ English Password';
+
+  let arPassword = '';
+  let interPassword = '';
+  let breakdownHTML = '';
+  let hasError = false;
+  let errorMsg = '';
+
+  for (const entry of currentPassword) {
+    const arChar = AR_CHARS[entry.index];
+    const otherChar = otherChars[entry.index];
+    if (!arChar || arChar === 'GO') {
+      hasError = true;
+      errorMsg = `Character "${entry.char}" at index ${entry.index} has no Arabic mapping!`;
+      break;
+    }
+    arPassword += arChar;
+    interPassword += (otherChar && otherChar !== 'GO') ? otherChar : '?';
+
+    const interChar = (otherChar && otherChar !== 'GO') ? otherChar : '?';
+    breakdownHTML += `
+      <div class="result-char">
+        <span class="from">${entry.char}</span>
+        <span class="arrow">→</span>
+        <span class="from" style="color:var(--accent)">${interChar}</span>
+        <span class="arrow">→</span>
+        <span class="to">${arChar}</span>
+      </div>`;
+  }
+
+  resultPanel.className = 'result-panel visible' + (hasError ? ' error' : '');
+
+  if (hasError) {
+    resultText.className = 'result-password error-text';
+    resultText.textContent = '⚠ ' + errorMsg;
+    breakdown.innerHTML = '';
+    intermediateBlock.style.display = 'none';
+  } else {
+    // Show intermediate
+    intermediateBlock.style.display = 'block';
+    intermediateLabel.textContent = otherLabel;
+    intermediateText.textContent = interPassword;
+
+    resultText.className = 'result-password';
+    resultText.textContent = arPassword;
+    breakdown.innerHTML = breakdownHTML;
+  }
+}
+
+function copyIntermediate() {
+  const text = document.getElementById('intermediate-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('intermediate-copy-btn');
+    btn.textContent = '✓ COPIED!';
+    setTimeout(() => btn.textContent = '⧉ COPY', 2000);
+  });
+}
+
+function showError(msg) {
+  const resultPanel = document.getElementById('result-panel');
+  const resultText = document.getElementById('result-text');
+  document.getElementById('intermediate-block').style.display = 'none';
+  resultPanel.className = 'result-panel visible error';
+  resultText.className = 'result-password error-text';
+  resultText.textContent = '⚠ ' + msg;
+  document.getElementById('result-breakdown').innerHTML = '';
+}
+
+function hideResult() {
+  document.getElementById('result-panel').className = 'result-panel';
+  document.getElementById('intermediate-block').style.display = 'none';
+}
+
+function clearAll() {
+  currentPassword = [];
+  document.getElementById('pwd-input').value = '';
+  hideResult();
+  initDisplay();
+  renderSourceGrid();
+}
+
+function copyResult() {
+  const text = document.getElementById('result-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✓ COPIED!';
+    setTimeout(() => btn.textContent = '⧉ COPY', 2000);
+  });
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+
+  if (tab === 'grids') renderRefGrids();
+  if (tab === 'table') renderTable();
+  if (tab === 'db') renderDB();
+}
+
+function renderRefGrids() {
+  renderGrid(EN_CHARS, 'ref-en-grid', false, []);
+  renderGrid(JP_CHARS, 'ref-jp-grid', false, []);
+  renderGrid(AR_CHARS, 'ref-ar-grid', false, []);
+}
+
+function renderTable() {
+  const table = document.getElementById('ref-table');
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>INDEX</th>
+        <th>ENGLISH</th>
+        <th>JAPANESE</th>
+        <th>ARABIC (TARGET)</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  `;
+  const tbody = document.getElementById('table-body');
+  for (let i = 0; i < 65; i++) {
+    const en = EN_CHARS[i] || '-';
+    const jp = JP_CHARS[i] || '-';
+    const ar = AR_CHARS[i] || '?';
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="idx">#${String(i).padStart(2,'0')}</td>
+      <td>${en}</td>
+      <td>${jp}</td>
+      <td dir="rtl">${ar}</td>
+    `;
+    tbody.appendChild(row);
+  }
+}
+
+function jpToAr(jp) {
+  let result = '';
+  let chars = [];
+  for (const ch of jp) {
+    const idx = JP_CHARS.indexOf(ch);
+    if (idx === -1 || idx === 64) return null;
+    const arChar = AR_CHARS[idx];
+    result += arChar;
+    chars.push(arChar);
+  }
+  return { str: result, chars };
+}
+
+function formatPwd(pwd, layout) {
+  // layout e.g. [[5,5],[5,3]]
+  let i = 0, rows = [];
+  for (const groups of layout) {
+    let rowParts = [];
+    for (const n of groups) {
+      rowParts.push([...pwd].slice(i, i+n).join(''));
+      i += n;
+    }
+    rows.push(rowParts.join(' '));
+  }
+  return rows.join('\n');
+}
+
+function formatArPwd(arChars, layout) {
+  // arChars is an array of Arabic character strings (each may be multi-codepoint)
+  // Separate each char with a thin space for readability, keep group/row structure
+  let i = 0, rows = [];
+  for (const groups of layout) {
+    let rowParts = [];
+    for (const n of groups) {
+      rowParts.push(arChars.slice(i, i+n).join(' '));
+      i += n;
+    }
+    rows.push(rowParts.join('   '));
+  }
+  return rows.join('\n');
+}
+
+function initTeamSelector() {
+  const sel = document.getElementById('db-team');
+  // Normal teams
+  const normalTeams = [...new Set(PASSWORD_DB
+    .filter(e => !e.teamEn.startsWith('Special'))
+    .map(e => e.teamEn))];
+  // Special sub-teams
+  const specialTeams = [...new Set(PASSWORD_DB
+    .filter(e => e.teamEn.startsWith('Special'))
+    .map(e => e.teamEn))];
+
+  const normalGroup = document.createElement('optgroup');
+  normalGroup.label = '── Game Passwords ──';
+  normalTeams.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t;
+    normalGroup.appendChild(opt);
+  });
+
+  const specialGroup = document.createElement('optgroup');
+  specialGroup.label = '── Special / Easter Eggs ──';
+  specialTeams.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t; opt.textContent = t.replace('Special — ', '⭐ ');
+    specialGroup.appendChild(opt);
+  });
+
+  sel.appendChild(normalGroup);
+  sel.appendChild(specialGroup);
+}
+
+function renderDB() {
+  const search = document.getElementById('db-search').value.toLowerCase();
+  const teamFilter = document.getElementById('db-team').value;
+  const tbody = document.getElementById('db-body');
+  const specialBody = document.getElementById('special-body');
+  const specialSection = document.getElementById('special-section');
+  tbody.innerHTML = '';
+  specialBody.innerHTML = '';
+
+  const isMatch = (e) => {
+    if (search && !e.teamEn.toLowerCase().includes(search) && !e.team.includes(search)) return false;
+    if (teamFilter && e.teamEn !== teamFilter) return false;
+    return true;
+  };
+
+  const normal = PASSWORD_DB.filter(e => e.teamEn !== 'Special' && !e.teamEn.startsWith('Special') && isMatch(e));
+  const special = PASSWORD_DB.filter(e => (e.teamEn === 'Special' || e.teamEn.startsWith('Special')) && isMatch(e));
+
+  // Render main table
+  if (normal.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:var(--dim);text-align:center;padding:20px">No results</td></tr>';
+  } else {
+    normal.forEach(entry => {
+      const ar = jpToAr(entry.jp);
+      const arFormatted = ar ? formatArPwd(ar.chars, PWD_LAYOUT) : '⚠ mapping error';
+      const jpFormatted = formatPwd(entry.jp, PWD_LAYOUT);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="white-space:nowrap;font-size:11px">${entry.teamEn}<br><span style="color:var(--dim);font-size:10px">${entry.team}</span></td>
+        <td style="color:var(--gold);font-size:12px;white-space:nowrap">${entry.level}</td>
+        <td style="font-size:13px;white-space:pre;letter-spacing:2px">${jpFormatted}</td>
+        <td dir="rtl" style="font-size:15px;white-space:pre;letter-spacing:3px;color:var(--success)">${arFormatted}</td>
+        <td><button class="copy-btn" style="margin:0;font-size:7px;padding:6px 8px">⧉</button></td>
+      `;
+      const btn = tr.querySelector('.copy-btn');
+      const arStr = ar ? ar.str : '';
+      btn.addEventListener('click', () => {
+        if (!arStr) return;
+        navigator.clipboard.writeText(arStr).then(() => {
+          btn.textContent = '✓';
+          setTimeout(() => btn.textContent = '⧉', 2000);
+        });
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Render special table
+  if (special.length === 0) {
+    specialSection.style.display = 'none';
+  } else {
+    specialSection.style.display = 'block';
+    special.forEach(entry => {
+      const ar = jpToAr(entry.jp);
+      const arFormatted = ar ? formatArPwd(ar.chars, PWD_LAYOUT) : '⚠ mapping error';
+      const jpFormatted = formatPwd(entry.jp, PWD_LAYOUT);
+      // Extract opponent from teamEn e.g. "Special — Iran" → "Iran"
+      const opponent = entry.teamEn.replace('Special — ', '').replace('Special', '—');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="white-space:nowrap;font-size:11px;color:var(--accent2)">${opponent}</td>
+        <td style="font-size:13px;white-space:pre;letter-spacing:2px">${jpFormatted}</td>
+        <td dir="rtl" style="font-size:15px;white-space:pre;letter-spacing:3px;color:var(--success)">${arFormatted}</td>
+        <td style="font-size:11px;color:var(--gold);font-style:italic">${entry.note || '—'}</td>
+        <td style="font-size:10px;color:var(--dim);max-width:200px;line-height:1.6">${entry.effect || '—'}</td>
+        <td><button class="copy-btn" style="margin:0;font-size:7px;padding:6px 8px">⧉</button></td>
+      `;
+      const btn = tr.querySelector('.copy-btn');
+      const arStr = ar ? ar.str : '';
+      btn.addEventListener('click', () => {
+        if (!arStr) return;
+        navigator.clipboard.writeText(arStr).then(() => {
+          btn.textContent = '✓';
+          setTimeout(() => btn.textContent = '⧉', 2000);
+        });
+      });
+      specialBody.appendChild(tr);
+    });
+  }
+}
+
+function copyAr(text) {
+  if (!text) return;
+  navigator.clipboard.writeText(text);
+}
+
+// INIT
+initDisplay();
+renderSourceGrid();
+initTeamSelector();
+renderDB();
+</script>
+</body>
+</html>
