@@ -590,7 +590,7 @@
       </div>
 
       <div class="note-box" id="mode-note">
-        Enter your English password (16 characters). Use the character grid below or type directly.
+        Enter your English password (18 characters). Use the character grid below or type directly.
       </div>
 
       <!-- Password slots display -->
@@ -1837,10 +1837,10 @@ function setMode(mode) {
   const note = document.getElementById('mode-note');
   const label = document.getElementById('grid-source-label');
   if (mode === 'en') {
-    note.textContent = 'Enter your English password (up to 16 characters). Click chars below or type directly.';
+    note.textContent = 'Enter your English password (up to 18 characters). Click chars below or type directly.';
     label.textContent = '▸ English Character Grid (click to build password)';
   } else {
-    note.textContent = 'Enter your Japanese password (up to 16 characters). Click chars below or type directly.';
+    note.textContent = 'Enter your Japanese password (up to 18 characters). Click chars below or type directly.';
     label.textContent = '▸ Japanese Character Grid (click to build password)';
   }
   currentPassword = [];
