@@ -575,6 +575,7 @@
   <div class="panel">
     <div class="tabs">
       <button class="tab active" onclick="switchTab('convert')">CONVERTER</button>
+      <button class="tab" onclick="switchTab('gen')">⚙ GENERATOR</button>
       <button class="tab" onclick="switchTab('grids')">CHAR MAPS</button>
       <button class="tab" onclick="switchTab('table')">FULL TABLE</button>
       <button class="tab" onclick="switchTab('db')">📖 DATABASE</button>
@@ -626,6 +627,91 @@
         <div class="result-password" id="result-text"></div>
         <div class="result-breakdown" id="result-breakdown"></div>
         <button class="copy-btn" onclick="copyResult()">⧉ COPY</button>
+      </div>
+    </div>
+
+    <!-- GENERATOR TAB -->
+    <div id="tab-gen" class="tab-content mt16">
+      <div class="panel-title">Password Generator</div>
+      <div class="note-box" style="margin-bottom:20px">
+        Generate a Japanese, English &amp; Arabic password for any team and player level configuration.<br>
+        Algorithm sourced from <a href="https://cah4e3.shedevr.org.ru/cheatsbase_passg.php#249" target="_blank" style="color:var(--accent)">cah4e3.shedevr.org.ru</a>.
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;margin-bottom:20px">
+
+        <!-- Team / Round -->
+        <div>
+          <div class="grid-label" style="margin-bottom:8px">OPPONENT TEAM</div>
+          <select id="gen-round" style="width:100%;background:#080d14;border:2px solid var(--border);color:var(--text);padding:10px 12px;font-family:inherit;font-size:12px;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+          </select>
+        </div>
+
+        <!-- Random seed -->
+        <div>
+          <div class="grid-label" style="margin-bottom:8px">RANDOM SEED (0–63)</div>
+          <input type="number" id="gen-random" min="0" max="63" value="0"
+            style="width:100%;background:#080d14;border:2px solid var(--border);color:var(--text);padding:10px 12px;font-family:'Share Tech Mono',monospace;font-size:14px;outline:none;transition:border-color 0.2s"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)';clampInput(this,0,63)"/>
+        </div>
+
+        <!-- Extra flags -->
+        <div style="grid-column:1/-1">
+          <div class="grid-label" style="margin-bottom:10px">SPECIAL FLAGS</div>
+          <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:12px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="gen-extra0" style="accent-color:var(--accent)"> 🌀 Unlock Cyclone Shoot
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="gen-extra1" style="accent-color:var(--accent)"> ⚽ Unlock Drive Overhead Shoot
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="gen-extra2" style="accent-color:var(--accent)"> 💔 Misugi's Guts &lt; 100
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Player levels + exp grid -->
+      <div class="grid-label" style="margin-bottom:10px">PLAYER SLOTS — LEVEL & CURRENT EXP</div>
+      <div style="font-size:10px;color:var(--dim);margin-bottom:10px;line-height:1.8">
+        Each slot stores the level for multiple characters across all three teams simultaneously.
+        <span style="color:var(--accent)">São Paulo</span> ·
+        <span style="color:var(--dim)">Nankatsu</span> ·
+        <span style="color:var(--success)">Japan</span>
+      </div>
+      <div style="overflow-x:auto;margin-bottom:24px">
+        <table class="ref-table" style="min-width:500px">
+          <thead><tr>
+            <th>SLOT / CHARACTERS</th><th>LEVEL (0–63)</th><th>CURRENT EXP</th>
+          </tr></thead>
+          <tbody id="gen-player-rows"></tbody>
+        </table>
+      </div>
+
+      <button class="convert-btn" onclick="generatePassword()" style="width:100%;font-size:10px;padding:16px">
+        ⚙ GENERATE PASSWORD
+      </button>
+
+      <!-- Output -->
+      <div id="gen-result" style="display:none;margin-top:20px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <div class="result-panel visible" style="margin-top:0">
+            <div class="result-label">▸ Japanese Password</div>
+            <div class="result-password" id="gen-jp" style="font-size:16px;color:var(--accent);letter-spacing:3px;white-space:pre"></div>
+            <button class="copy-btn" onclick="copyGen('gen-jp')" style="margin-top:10px">⧉ COPY</button>
+          </div>
+          <div class="result-panel visible" style="margin-top:0">
+            <div class="result-label">▸ English Password</div>
+            <div class="result-password" id="gen-en" style="font-size:16px;color:var(--gold);letter-spacing:3px;white-space:pre"></div>
+            <button class="copy-btn" onclick="copyGen('gen-en')" style="margin-top:10px">⧉ COPY</button>
+          </div>
+          <div class="result-panel visible" style="margin-top:0">
+            <div class="result-label">▸ Arabic Password (v1)</div>
+            <div class="result-password" id="gen-ar" style="font-size:13px;letter-spacing:2px;direction:rtl;white-space:pre"></div>
+            <button class="copy-btn" onclick="copyGen('gen-ar')" style="margin-top:10px">⧉ COPY</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1904,7 +1990,11 @@ function syncInputFromArray() {
 }
 
 function onTextInput() {
-  const val = document.getElementById('pwd-input').value;
+  const raw = document.getElementById('pwd-input').value;
+  // Strip spaces and full-width spaces so pasted passwords work directly
+  const val = raw.replace(/[\s\u3000]/g, '');
+  // Update the field to show the cleaned value
+  document.getElementById('pwd-input').value = val;
   const chars = getChars();
   currentPassword = [];
   for (const ch of val) {
@@ -2031,6 +2121,7 @@ function switchTab(tab) {
   if (tab === 'grids') renderRefGrids();
   if (tab === 'table') renderTable();
   if (tab === 'db') renderDB();
+  if (tab === 'gen') initGenerator();
 }
 
 function renderRefGrids() {
@@ -2232,6 +2323,188 @@ function copyAr(text) {
   navigator.clipboard.writeText(text);
 }
 
+// ============================================================
+// PASSWORD GENERATOR
+// Algorithm adapted from cah4e3.shedevr.org.ru (Captain Tsubasa II)
+// Round = team index (0=Fluminense ... 32=Brazil)
+// ============================================================
+
+const GEN_TEAMS = [
+  'Fluminense','Corinthians','Grêmio','Palmeiras','Santos','Flamengo',
+  'Kunimi Institute','Akita Shōkō','Tatsunami','Musashi','Furano','Tōhō',
+  'Roma','Uruguay','Hamburger SV','Japan','Syria','China','Iran',
+  'North Korea','Saudi Arabia','South Korea','Vasco da Gama','Poland',
+  'England','Soviet Union','France','Mexico','Italy','Holland',
+  'Argentine','West Germany','Brazil'
+];
+
+// Player slot descriptions — each slot stores level for multiple characters across 3 teams
+const GEN_SLOT_INFO = [
+  { slot:1,  sp:'Tsubasa',          nan:'Urabe',                   jpn:'Tsubasa' },
+  { slot:2,  sp:'Renato',           nan:'Nakayama, Kishida',        jpn:'Takasugi, Izawa, Taki, Kisugi, Morisaki' },
+  { slot:3,  sp:'Lima, Marini',     nan:'Morisaki',                 jpn:'Misaki' },
+  { slot:4,  sp:'Amaral',           nan:'Takasugi',                 jpn:'Ishizaki' },
+  { slot:5,  sp:'Doutor',           nan:'Misaki',                   jpn:'Nitta, Kazuo, Masao, Jito, Misugi' },
+  { slot:6,  sp:'Batista',          nan:'Izawa',                    jpn:'Soda, Sano, Sawada, Sorimachi' },
+  { slot:7,  sp:'Tahamata',         nan:'Taki',                     jpn:'Hyuga' },
+  { slot:8,  sp:'Babington',        nan:'Ishizaki',                 jpn:'Matsuyama' },
+  { slot:9,  sp:'Gil',              nan:'Nitta',                    jpn:'Wakabayashi' },
+  { slot:10, sp:'Plato',            nan:'Kisugi',                   jpn:'Wakashimazu' },
+];
+
+// Permutation table from the original algorithm
+const GEN_PERM = [
+  45,20,6,29,2,34,9,42,52,14,0,41,55,31,37,10,26,15,56,3,
+  40,17,19,46,61,22,7,54,13,32,44,59,27,5,12,18,38,48,28,25,
+  23,62,11,33,58,35,39,30,24,1,51,63,16,43,57,47,49,8,53,4,21,50,36,60
+];
+
+// JP alphabet string (64 chars, indices 0-63)
+const GEN_JP_ALPHA = 'あかさたなはまらがざばぱやいきしちにひみりぎじびぴゆうくすつぬふむるぐずぶぷよえけせてねへめれげぜべぺわおこそとのほもろごぞぼぽ';
+
+let genInitialized = false;
+
+function initGenerator() {
+  if (genInitialized) return;
+  genInitialized = true;
+
+  // Populate team dropdown
+  const sel = document.getElementById('gen-round');
+  sel.innerHTML = '';
+  GEN_TEAMS.forEach((name, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${i} — ${name}`;
+    sel.appendChild(opt);
+  });
+
+  // Populate player rows table
+  const tbody = document.getElementById('gen-player-rows');
+  tbody.innerHTML = '';
+  GEN_SLOT_INFO.forEach((info, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-size:10px;line-height:1.6;white-space:nowrap">
+        <span style="color:var(--gold)">Slot ${info.slot}</span><br>
+        <span style="color:var(--accent);font-size:9px">São Paulo: ${info.sp}</span><br>
+        <span style="color:var(--dim);font-size:9px">Nankatsu: ${info.nan}</span><br>
+        <span style="color:var(--success);font-size:9px">Japan: ${info.jpn}</span>
+      </td>
+      <td>
+        <input type="number" id="gen-level-${i}" min="0" max="63" value="1"
+          style="width:70px;background:#080d14;border:2px solid var(--border);color:var(--text);padding:6px 8px;font-family:'Share Tech Mono',monospace;font-size:14px;outline:none"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)';clampInput(this,0,63)"/>
+      </td>
+      <td>
+        <select id="gen-exp-${i}" style="background:#080d14;border:2px solid var(--border);color:var(--text);padding:6px 8px;font-family:inherit;font-size:12px;outline:none">
+          <option value="0">0%</option>
+          <option value="1">25%</option>
+          <option value="2">50%</option>
+          <option value="3">75%</option>
+        </select>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function clampInput(el, min, max) {
+  let v = parseInt(el.value);
+  if (isNaN(v)) v = min;
+  if (v < min) v = min;
+  if (v > max) v = max;
+  el.value = v;
+}
+
+function generatePassword() {
+  const c = new Array(14).fill(0);
+  const b = new Array(18).fill(0);
+
+  // Player levels & exp (10 slots)
+  for (let d = 0; d < 10; d++) {
+    const levelVal = Math.max(0, Math.min(63, parseInt(document.getElementById(`gen-level-${d}`).value) || 0));
+    const expVal   = parseInt(document.getElementById(`gen-exp-${d}`).value) || 0;
+    c[d] = (levelVal << 2) | (expVal & 3);
+  }
+
+  // Round (team index), clamped to 0–33
+  const roundVal = Math.max(0, Math.min(33, parseInt(document.getElementById('gen-round').value) || 0));
+  const extra0 = document.getElementById('gen-extra0').checked; // Unlock Cyclone Shoot
+  const extra1 = document.getElementById('gen-extra1').checked; // Unlock Drive Overhead Shoot
+  const extra2 = document.getElementById('gen-extra2').checked; // Misugi guts < 100
+
+  c[10] = (roundVal << 2);
+  c[10] |= extra0 ? 2 : 0;
+  c[10] |= extra1 ? 1 : 0;
+
+  // Random seed (0–63)
+  const g = Math.max(0, Math.min(63, parseInt(document.getElementById('gen-random').value) || 0));
+  c[11] = (48 & g) | (extra2 ? 128 : 0);
+  c[13] = (15 & g) << 4;
+
+  // Checksum
+  let h = c[11] | (15 & g);
+  let f = (240 & c[11]) + c[13];
+  for (let d = 0; d < 11; d++) f += c[d];
+  f += 777;
+  c[12] = 255 & f;
+  c[11] |= (f >> 8) & 15;
+
+  // Pack into 18 password chars (6-bit each)
+  for (let d = 0; d < 4; d++) {
+    const k = 4 * d, l = 3 * d;
+    b[k+0] = c[l+0] >> 2;
+    b[k+1] = ((3 & c[l+0]) << 4) | (c[l+1] >> 4);
+    b[k+2] = ((15 & c[l+1]) << 2) | (c[l+2] >> 6);
+    b[k+3] = 63 & c[l+2];
+  }
+  b[16] = c[12] >> 2;
+  b[17] = ((3 & c[12]) << 4) | (c[13] >> 4);
+
+  // Apply permutation + rolling XOR
+  for (let d = 0; d < 18; d++) {
+    let m = GEN_PERM[b[d]];
+    if (d < 15) { h++; m = (m + h) & 63; }
+    b[d] = m;
+  }
+
+  // Build JP password string (indices into GEN_JP_ALPHA = same as JP_CHARS indices)
+  let jpPwd = '';
+  for (let d = 0; d < 18; d++) jpPwd += GEN_JP_ALPHA[b[d]];
+
+  // Build EN password string (same index → EN_CHARS)
+  let enPwd = '';
+  for (let d = 0; d < 18; d++) {
+    const ch = EN_CHARS[b[d]];
+    enPwd += (ch && ch !== 'GO') ? ch : '?';
+  }
+
+  // Format with layout [5,5]/[5,3]
+  const fmt = (pwd) => pwd.slice(0,5) + ' ' + pwd.slice(5,10) + '\n' + pwd.slice(10,15) + ' ' + pwd.slice(15,18);
+
+  // Convert JP → Arabic (per character)
+  const arChars = [...jpPwd].map(ch => {
+    const idx = JP_CHARS.indexOf(ch);
+    return idx !== -1 ? AR_CHARS[idx] : '?';
+  });
+  const arFmt = formatArPwd(arChars, PWD_LAYOUT);
+
+  document.getElementById('gen-jp').textContent = fmt(jpPwd);
+  document.getElementById('gen-en').textContent = fmt(enPwd);
+  document.getElementById('gen-ar').textContent = arFmt;
+  document.getElementById('gen-result').style.display = 'block';
+}
+
+function copyGen(id) {
+  const raw = document.getElementById(id).textContent.replace(/[\s\n]/g, '');
+  navigator.clipboard.writeText(raw).then(() => {
+    const btn = event.target;
+    btn.textContent = '✓ COPIED!';
+    setTimeout(() => btn.textContent = '⧉ COPY', 2000);
+  });
+}
+
+// ============================================================
 // INIT
 initDisplay();
 renderSourceGrid();
