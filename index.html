@@ -2118,6 +2118,7 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
   event.target.classList.add('active');
 
+  if (tab === 'convert') renderSourceGrid();
   if (tab === 'grids') renderRefGrids();
   if (tab === 'table') renderTable();
   if (tab === 'db') renderDB();
@@ -2507,7 +2508,7 @@ function copyGen(id) {
 // ============================================================
 // INIT
 initDisplay();
-renderSourceGrid();
+requestAnimationFrame(() => renderSourceGrid());
 initTeamSelector();
 renderDB();
 </script>
